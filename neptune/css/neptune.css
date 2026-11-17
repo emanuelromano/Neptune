@@ -84,7 +84,7 @@
   box-shadow: var(--neptune-card-shadow);
 }
 
-/* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock.js. */
+/* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock_1.js. */
 .neptune-clock {
   position: relative;
   width: 100%;

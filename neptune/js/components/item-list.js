@@ -1,6 +1,6 @@
-import { createClock } from './clock.js';
+import { createClock } from './clock_1.js';
 
-const ITEM_ICON_URL = new URL('../../assets/icons/placeholder.png', import.meta.url).href;
+const ICONS_DIRECTORY_URL = new URL('../../assets/icons/', import.meta.url);
 
 /*
  * AJUSTES DE GESTOS — modifica estos valores para calibrar el tacto de la lista.
@@ -54,17 +54,20 @@ export function createItemList(items) {
   featuredSquare.append(createClock());
   content.append(featuredSquare);
 
-  items.forEach((label) => {
+  // ENTIDADES DE APLICACIÓN: cada tarjeta conserva su id para la futura vista
+  // ampliada y obtiene su texto e icono desde NEPTUNE_APPS en screens/home.js.
+  items.forEach((item) => {
     const card = document.createElement('article');
     card.className = 'neptune-item-card';
+    card.dataset.appId = item.id;
     const icon = document.createElement('img');
     icon.className = 'neptune-item-icon';
-    icon.src = ITEM_ICON_URL;
+    icon.src = new URL(item.icon, ICONS_DIRECTORY_URL).href;
     icon.alt = '';
 
     const itemLabel = document.createElement('span');
     itemLabel.className = 'neptune-item-label';
-    itemLabel.textContent = label;
+    itemLabel.textContent = item.label;
 
     card.append(icon, itemLabel);
     content.append(card);

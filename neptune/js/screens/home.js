@@ -1,15 +1,21 @@
 import { createItemList } from '../components/item-list.js';
 
-const PLACEHOLDER_ITEMS = Array.from(
-  { length: 4 },
-  (_, index) => `Item ${index + 1}`
-);
+/*
+ * APLICACIONES DE NEPTUNE: cada objeto representa una tarjeta y, más adelante,
+ * su propia mini ventana a pantalla completa. Edita aquí el id, nombre o icono.
+ */
+const NEPTUNE_APPS = [
+  { id: 'calendar', label: 'Calendario', icon: 'calendar.png' },
+  { id: 'notes', label: 'Notas', icon: 'notes.png' },
+  { id: 'contacts', label: 'Contactos', icon: 'contacts.png' },
+  { id: 'settings', label: 'Configuración', icon: 'settings.png' }
+];
 
 export function createHomeScreen() {
   const screen = document.createElement('section');
   screen.className = 'neptune-screen neptune-home';
   screen.setAttribute('aria-label', 'Inicio');
-  screen.append(createItemList(PLACEHOLDER_ITEMS));
+  screen.append(createItemList(NEPTUNE_APPS));
 
   return screen;
 }
