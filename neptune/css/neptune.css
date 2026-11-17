@@ -82,13 +82,6 @@
   will-change: transform;
 }
 
-/* Durante scroll se omite el blur costoso y se conserva la transparencia. */
-.neptune-list-viewport--scrolling .neptune-featured-square,
-.neptune-list-viewport--scrolling .neptune-item-card {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
 .neptune-list-content {
   display: grid;
   gap: var(--neptune-list-gap);
@@ -111,8 +104,6 @@
   box-shadow: var(--neptune-card-shadow);
   /* Fuerza la composición inicial del vidrio en Safari antes del primer scroll. */
   transform: translateZ(0);
-  -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
-  backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
 }
 
 /* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock_1.js. */
@@ -218,8 +209,6 @@
   box-shadow: var(--neptune-card-shadow);
   /* Fuerza la composición inicial del vidrio en Safari antes del primer scroll. */
   transform: translateZ(0);
-  -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
-  backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
   font-size: var(--neptune-item-font-size);
   font-weight: var(--neptune-item-font-weight);
   line-height: 1;
@@ -231,6 +220,23 @@
   width: 30px;
   height: 30px;
   object-fit: contain;
+}
+
+/*
+ * El blur se activa tras el primer render para evitar un fallo de composición
+ * inicial de Safari. La transparencia ya existe antes de añadir esta clase.
+ */
+#neptune-app.neptune-glass-ready .neptune-featured-square,
+#neptune-app.neptune-glass-ready .neptune-item-card {
+  -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
+  backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
+}
+
+/* Durante scroll se omite el blur costoso y se conserva la transparencia. */
+#neptune-app .neptune-list-viewport--scrolling .neptune-featured-square,
+#neptune-app .neptune-list-viewport--scrolling .neptune-item-card {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

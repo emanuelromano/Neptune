@@ -13,4 +13,12 @@ if (mountPoint) {
   }
 
   mountPoint.replaceChildren(appShell);
+
+  // WebKit puede omitir el primer backdrop-filter si se activa antes de pintar.
+  // Dos frames aseguran que el wallpaper exista detrás antes de activar el vidrio.
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      mountPoint.classList.add('neptune-glass-ready');
+    });
+  });
 }
