@@ -32,9 +32,17 @@
   /* Radio independiente del botón de volver. */
   --neptune-app-back-button-radius: 7px;
 
+  /* TOKENS DE TEMA CLARO: colores compartidos por texto, iconos y superficies. */
+  --neptune-text-color: #000000;
+  --neptune-icon-color: #000000;
+  --neptune-screen-color: #ffffff;
+  --neptune-settings-row-color: rgb(255 255 255 / 88%);
+  --neptune-settings-switch-off-color: #8e8e93;
+  --neptune-settings-switch-on-color: #ff8a00;
+
   /* SUPERFICIES DE VIDRIO: color blanco translúcido y desenfoque del fondo. */
   /* Reduce la opacidad alfa (el último valor) para hacer tarjetas más transparentes. */
-  --neptune-glass-color: rgb(255 255 255 / 80%);
+  --neptune-glass-color: rgb(255 255 255 / 100%);
   /* Aumenta este valor para intensificar el desenfoque gaussiano detrás de las tarjetas. */
   --neptune-glass-blur: 16px;
   /* Realza o atenúa los colores visibles a través del vidrio. */
@@ -56,6 +64,26 @@
 
   width: 100%;
   height: 100%;
+  opacity: 1;
+  transition: opacity 150ms ease;
+}
+
+/* TEMA OSCURO: sustituye wallpaper, superficies, textos e iconos. */
+#neptune-app[data-theme='dark'] {
+  --neptune-text-color: #ffffff;
+  --neptune-icon-color: #ffffff;
+  --neptune-screen-color: #161616;
+  --neptune-glass-color: #303030;
+  --neptune-wallpaper-image: url('../assets/backgrounds/background_2.png');
+  --neptune-app-back-button-color: #3c3c3c;
+  --neptune-app-back-button-active-color: #525252;
+  --neptune-settings-row-color: #3a3a3a;
+  --neptune-settings-switch-off-color: #6b6b70;
+}
+
+/* Fade breve al cambiar los tokens de tema. */
+#neptune-app.neptune-theme-fading {
+  opacity: 0.35;
 }
 
 .neptune-shell {
@@ -68,7 +96,7 @@
   width: 100%;
   height: 100%;
   padding: 0;
-  background-color: #ffffff;
+  background-color: var(--neptune-screen-color);
   background-image: var(--neptune-wallpaper-image);
   background-position: var(--neptune-wallpaper-position);
   background-repeat: no-repeat;
@@ -223,7 +251,7 @@
   margin-inline: auto;
   padding: 0 var(--neptune-item-horizontal-padding);
   overflow: hidden;
-  color: #000000;
+  color: var(--neptune-text-color);
   background: var(--neptune-glass-color);
   border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
@@ -284,7 +312,7 @@
   width: var(--neptune-app-back-button-size);
   height: var(--neptune-app-back-button-size);
   padding: var(--neptune-app-back-button-padding);
-  color: #000000;
+  color: var(--neptune-text-color);
   background: var(--neptune-app-back-button-color);
   border: 0;
   border-radius: var(--neptune-app-back-button-radius);
@@ -315,11 +343,95 @@
   height: 24px;
 }
 
+/* SVG inline: el color proviene de currentColor y por tanto del tema activo. */
+.neptune-inline-icon {
+  display: block;
+  fill: currentColor;
+}
+
 .neptune-item-icon {
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
-  object-fit: contain;
+  color: var(--neptune-icon-color);
+}
+
+/* Panel de Configuración, visible únicamente cuando se expande esa aplicación. */
+.neptune-settings-panel {
+  position: absolute;
+  top: 90px;
+  right: 20px;
+  left: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.neptune-app-expansion-card--expanded .neptune-settings-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 120ms;
+}
+
+.neptune-settings-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 12px 14px;
+  color: var(--neptune-text-color);
+  background: var(--neptune-settings-row-color);
+  border-radius: var(--neptune-card-radius);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%);
+}
+
+.neptune-settings-theme-label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Switch accesible: el input real conserva foco y el track imita a iOS. */
+.neptune-settings-theme-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.neptune-settings-theme-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 32px;
+  background: var(--neptune-settings-switch-off-color);
+  border-radius: 999px;
+  transition: background-color 180ms ease;
+}
+
+.neptune-settings-theme-switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  content: '';
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+  transition: transform 180ms ease;
+}
+
+.neptune-settings-theme-input:checked + .neptune-settings-theme-switch {
+  background: var(--neptune-settings-switch-on-color);
+}
+
+.neptune-settings-theme-input:checked + .neptune-settings-theme-switch::after {
+  transform: translateX(20px);
+}
+
+.neptune-settings-theme-input:focus-visible + .neptune-settings-theme-switch {
+  outline: 3px solid #1769aa;
+  outline-offset: 2px;
 }
 
 /*
@@ -346,7 +458,11 @@
 
   .neptune-list-content--expanding > *,
   .neptune-app-expansion-card,
-  .neptune-app-back-button {
+  .neptune-app-back-button,
+  .neptune-settings-panel,
+  .neptune-settings-theme-switch,
+  .neptune-settings-theme-switch::after,
+  #neptune-app {
     transition: none;
   }
 }

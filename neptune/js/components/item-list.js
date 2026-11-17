@@ -1,6 +1,6 @@
 import { createClock } from './clock_1.js';
-
-const ICONS_DIRECTORY_URL = new URL('../../assets/icons/', import.meta.url);
+import { createInlineIcon } from './icons.js';
+import { getPersistedTheme, toggleTheme } from '../theme.js';
 
 /*
  * AJUSTES DE GESTOS — modifica estos valores para calibrar el tacto de la lista.
@@ -66,11 +66,7 @@ export function createItemList(items) {
     const card = document.createElement('article');
     card.className = 'neptune-item-card';
     card.dataset.appId = item.id;
-    const icon = document.createElement('img');
-    icon.className = 'neptune-item-icon';
-    icon.src = new URL(item.icon, ICONS_DIRECTORY_URL).href;
-    icon.alt = '';
-    icon.draggable = false;
+    const icon = createInlineIcon(item.icon, 'neptune-item-icon');
 
     const itemLabel = document.createElement('span');
     itemLabel.className = 'neptune-item-label';
@@ -393,6 +389,11 @@ function expandItemCard(card, viewport) {
   });
   expandedCard.append(backButton);
 
+  // El panel de ajustes se crea solo para la entidad Configuración.
+  if (expandedAppId === 'settings') {
+    expandedCard.append(createSettingsPanel());
+  }
+
   expansionLayer.append(expandedCard);
   screen.append(expansionLayer);
   // Se oculta solo el original después de crear la copia visible de animación.
@@ -410,14 +411,43 @@ function createBackButton() {
   button.type = 'button';
   button.setAttribute('aria-label', 'Volver a la lista de aplicaciones');
 
-  const icon = document.createElement('img');
-  icon.className = 'neptune-app-back-icon';
-  icon.src = new URL('arrow_back.svg', ICONS_DIRECTORY_URL).href;
-  icon.alt = '';
-  icon.draggable = false;
+  const icon = createInlineIcon('arrow-back', 'neptune-app-back-icon');
 
   button.append(icon);
   return button;
+}
+
+/** Panel exclusivo de Configuración que contiene el interruptor de tema. */
+function createSettingsPanel() {
+  const panel = document.createElement('section');
+  panel.className = 'neptune-settings-panel';
+  panel.setAttribute('aria-label', 'Ajustes de apariencia');
+
+  const row = document.createElement('label');
+  row.className = 'neptune-settings-theme-row';
+
+  const label = document.createElement('span');
+  label.className = 'neptune-settings-theme-label';
+  label.textContent = 'Modo oscuro';
+
+  const input = document.createElement('input');
+  input.className = 'neptune-settings-theme-input';
+  input.type = 'checkbox';
+  input.checked = getPersistedTheme() === 'dark';
+  input.setAttribute('aria-label', 'Activar modo oscuro');
+
+  const track = document.createElement('span');
+  track.className = 'neptune-settings-theme-switch';
+  track.setAttribute('aria-hidden', 'true');
+
+  input.addEventListener('change', () => {
+    toggleTheme(document.getElementById('neptune-app'));
+  });
+
+  row.append(label, input, track);
+  panel.append(row);
+
+  return panel;
 }
 
 /** Ejecuta la misma transición de expansión en sentido inverso. */

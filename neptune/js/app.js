@@ -1,11 +1,14 @@
 import { createAppShell } from './components/app-shell.js';
 import { createHomeScreen } from './screens/home.js';
 import { createNeptuneState } from './state.js';
+import { applyTheme } from './theme.js';
 
 const mountPoint = document.getElementById('neptune-app');
 
 if (mountPoint) {
   const state = createNeptuneState();
+  // Aplica el tema persistido antes del primer render, sin animación inicial.
+  applyTheme(mountPoint, state.theme, { persist: false, animate: false });
   const appShell = createAppShell(state);
 
   if (state.screen === 'home') {

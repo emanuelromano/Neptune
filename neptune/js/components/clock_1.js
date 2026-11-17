@@ -1,3 +1,5 @@
+import { getPersistedTheme, THEME_CHANGE_EVENT } from '../theme.js';
+
 /*
  * CONFIGURACIÓN DEL RELOJ ANALÓGICO
  * Todas las medidas están en píxeles. Ajusta estos valores para cambiar el
@@ -42,6 +44,24 @@ const CLOCK_CONFIG = Object.freeze({
   digitalTimeRight: 18
 });
 
+/* Colores del reloj para cada tema; las dimensiones siguen en CLOCK_CONFIG. */
+const CLOCK_THEME_COLORS = Object.freeze({
+  light: {
+    tickColor: '#3f3f3f',
+    hourHandColor: '#000000',
+    minuteHandColor: '#000000',
+    secondHandColor: '#d62525',
+    digitalTimeColor: '#000000'
+  },
+  dark: {
+    tickColor: '#c9c9c9',
+    hourHandColor: '#ffffff',
+    minuteHandColor: '#ffffff',
+    secondHandColor: '#d62525',
+    digitalTimeColor: '#ffffff'
+  }
+});
+
 /** Crea un reloj analógico que se actualiza una vez por segundo. */
 export function createClock() {
   const clock = document.createElement('div');
@@ -49,6 +69,12 @@ export function createClock() {
   clock.setAttribute('role', 'group');
   clock.setAttribute('aria-label', 'Reloj analógico');
   applyClockConfiguration(clock);
+  applyClockTheme(clock, getPersistedTheme());
+
+  // El reloj cambia sus trazos y texto cuando Configuración modifica el tema.
+  window.addEventListener(THEME_CHANGE_EVENT, (event) => {
+    applyClockTheme(clock, event.detail.theme);
+  });
 
   const face = document.createElement('div');
   face.className = 'neptune-clock-face';
@@ -131,4 +157,13 @@ function applyClockConfiguration(clock) {
   Object.entries(values).forEach(([name, value]) => {
     clock.style.setProperty(name, value);
   });
+}
+
+function applyClockTheme(clock, theme) {
+  const colors = CLOCK_THEME_COLORS[theme] ?? CLOCK_THEME_COLORS.light;
+  clock.style.setProperty('--clock-tick-color', colors.tickColor);
+  clock.style.setProperty('--clock-hour-hand-color', colors.hourHandColor);
+  clock.style.setProperty('--clock-minute-hand-color', colors.minuteHandColor);
+  clock.style.setProperty('--clock-second-hand-color', colors.secondHandColor);
+  clock.style.setProperty('--clock-digital-color', colors.digitalTimeColor);
 }
