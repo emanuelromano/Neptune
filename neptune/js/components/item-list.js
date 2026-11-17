@@ -35,6 +35,10 @@ const MAX_FRAME_TIME = 32;
 // Mantiene desactivado el blur mientras el desplazamiento nativo está activo.
 const SCROLLING_STATE_TIMEOUT = 120;
 const KEYBOARD_SCROLL_STEP = 48;
+// Evita activar una aplicación al finalizar un gesto de arrastre.
+const TAP_LOCK_AFTER_DRAG = 250;
+
+let expandedAppId = null;
 
 /**
  * Crea una lista desplazable por arrastre de un dedo o clic sostenido.
@@ -72,6 +76,19 @@ export function createItemList(items) {
     itemLabel.textContent = item.label;
 
     card.append(icon, itemLabel);
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
+    card.setAttribute('aria-label', `Abrir ${item.label}`);
+    card.addEventListener('click', () => {
+      const tapLockUntil = Number(viewport.dataset.neptuneTapLockUntil ?? 0);
+      if (performance.now() >= tapLockUntil) expandItemCard(card, viewport);
+    });
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        expandItemCard(card, viewport);
+      }
+    });
     content.append(card);
   });
 
@@ -223,12 +240,21 @@ function enableDragScroll(viewport, content) {
   function finishDrag(event) {
     if (event.pointerId !== activePointerId) return;
 
+    const wasTap = event.type === 'pointerup' && !hasDragged;
+    const tappedCard = wasTap
+      ? document.elementFromPoint(event.clientX, event.clientY)?.closest('.neptune-item-card')
+      : null;
+
     if (viewport.hasPointerCapture(event.pointerId)) {
       viewport.releasePointerCapture(event.pointerId);
     }
 
     activePointerId = null;
     viewport.classList.remove('neptune-list-viewport--dragging');
+
+    if (hasDragged) {
+      viewport.dataset.neptuneTapLockUntil = String(performance.now() + TAP_LOCK_AFTER_DRAG);
+    }
 
     // Si el usuario ya estiró el borde, conserva esa posición y deja que la
     // transición elástica la lleve de vuelta. No la sustituye por la inercia.
@@ -242,6 +268,12 @@ function enableDragScroll(viewport, content) {
       startMomentum();
     } else {
       settleOverscroll(true);
+    }
+
+    // El puntero queda capturado por el viewport durante un gesto. Detectamos
+    // el elemento visual bajo el dedo para que el tap funcione también en iOS.
+    if (tappedCard && viewport.contains(tappedCard)) {
+      window.requestAnimationFrame(() => expandItemCard(tappedCard, viewport));
     }
   }
 
@@ -311,5 +343,57 @@ function enableDragScroll(viewport, content) {
 
   // Listener pasivo: no bloquea la entrega de eventos en Safari ni Chromium.
   viewport.addEventListener('scroll', setScrollingState, { passive: true });
+}
+
+/**
+ * Expande una tarjeta al área útil de la PDA. El estado queda abierto hasta
+ * que una futura acción de "volver" restaure la lista.
+ */
+function expandItemCard(card, viewport) {
+  if (expandedAppId !== null) return;
+
+  const screen = viewport.closest('.neptune-screen');
+  const content = viewport.querySelector('.neptune-list-content');
+  if (!screen || !content) return;
+
+  const screenRect = screen.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const scaleX = screenRect.width / screen.clientWidth || 1;
+  const scaleY = screenRect.height / screen.clientHeight || 1;
+  const startLeft = (cardRect.left - screenRect.left) / scaleX;
+  const startTop = (cardRect.top - screenRect.top) / scaleY;
+  const startWidth = cardRect.width / scaleX;
+  const startHeight = cardRect.height / scaleY;
+  const expansionMargin =
+    Number.parseFloat(getComputedStyle(screen).getPropertyValue('--neptune-app-expand-margin')) || 20;
+
+  expandedAppId = card.dataset.appId ?? 'active-app';
+  screen.dataset.activeApp = expandedAppId;
+  card.classList.add('neptune-item-card--selected');
+
+  const expansionLayer = document.createElement('div');
+  expansionLayer.className = 'neptune-app-expansion-layer';
+
+  const expandedCard = card.cloneNode(true);
+  expandedCard.classList.remove('neptune-item-card--selected');
+  expandedCard.classList.add('neptune-app-expansion-card');
+  expandedCard.style.setProperty('--app-expand-start-left', `${startLeft}px`);
+  expandedCard.style.setProperty('--app-expand-start-top', `${startTop}px`);
+  expandedCard.style.setProperty('--app-expand-start-width', `${startWidth}px`);
+  expandedCard.style.setProperty('--app-expand-start-height', `${startHeight}px`);
+  expandedCard.style.setProperty('--app-expand-target-width', `${screen.clientWidth - expansionMargin * 2}px`);
+  expandedCard.style.setProperty('--app-expand-target-height', `${screen.clientHeight - expansionMargin * 2}px`);
+  expandedCard.removeAttribute('tabindex');
+  expandedCard.removeAttribute('role');
+
+  expansionLayer.append(expandedCard);
+  screen.append(expansionLayer);
+  // Se oculta solo el original después de crear la copia visible de animación.
+  card.style.visibility = 'hidden';
+  content.classList.add('neptune-list-content--expanding');
+
+  window.requestAnimationFrame(() => {
+    expandedCard.classList.add('neptune-app-expansion-card--expanded');
+  });
 }
 
