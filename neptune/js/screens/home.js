@@ -5,10 +5,10 @@ import { createItemList } from '../components/item-list.js';
  * su propia mini ventana a pantalla completa. Edita aquí el id, nombre o icono.
  */
 const NEPTUNE_APPS = [
-  { id: 'calendar', label: 'Calendario', icon: 'calendar.png' },
-  { id: 'notes', label: 'Notas', icon: 'notes.png' },
-  { id: 'contacts', label: 'Contactos', icon: 'contacts.png' },
-  { id: 'settings', label: 'Configuración', icon: 'settings.png' }
+  { id: 'calendar', label: 'Calendario', icon: 'calendar.svg' },
+  { id: 'notes', label: 'Notas', icon: 'notes.svg' },
+  { id: 'contacts', label: 'Contactos', icon: 'contacts.svg' },
+  { id: 'settings', label: 'Configuración', icon: 'settings.svg' }
 ];
 
 export function createHomeScreen() {
