@@ -260,6 +260,11 @@
   height: var(--app-expand-target-height);
 }
 
+/* El título queda a 25 px del borde superior; el icono conserva los 20 px. */
+.neptune-app-expansion-card .neptune-item-label {
+  margin-top: 5px;
+}
+
 .neptune-item-icon {
   flex: 0 0 auto;
   width: 30px;
