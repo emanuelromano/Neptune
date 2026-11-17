@@ -37,6 +37,8 @@ const SCROLLING_STATE_TIMEOUT = 120;
 const KEYBOARD_SCROLL_STEP = 48;
 // Evita activar una aplicación al finalizar un gesto de arrastre.
 const TAP_LOCK_AFTER_DRAG = 250;
+// Tamaño relativo del ripple: menor = círculo más contenido dentro del elemento.
+const RIPPLE_DIAMETER_MULTIPLIER = 0.50;
 
 let expandedAppId = null;
 
@@ -76,9 +78,11 @@ export function createItemList(items) {
     card.setAttribute('role', 'button');
     card.tabIndex = 0;
     card.setAttribute('aria-label', `Abrir ${item.label}`);
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (event) => {
       const tapLockUntil = Number(viewport.dataset.neptuneTapLockUntil ?? 0);
-      if (performance.now() >= tapLockUntil) expandItemCard(card, viewport);
+      if (performance.now() >= tapLockUntil) {
+        expandItemCard(card, viewport, { clientX: event.clientX, clientY: event.clientY });
+      }
     });
     card.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
@@ -238,9 +242,9 @@ function enableDragScroll(viewport, content) {
     if (event.pointerId !== activePointerId) return;
 
     const wasTap = event.type === 'pointerup' && !hasDragged;
-    const tappedCard = wasTap
-      ? document.elementFromPoint(event.clientX, event.clientY)?.closest('.neptune-item-card')
-      : null;
+    const tappedTarget = wasTap ? document.elementFromPoint(event.clientX, event.clientY) : null;
+    const tappedCard = tappedTarget?.closest('.neptune-item-card');
+    const rippleHost = tappedTarget?.closest('.neptune-item-card, .neptune-featured-square');
 
     if (viewport.hasPointerCapture(event.pointerId)) {
       viewport.releasePointerCapture(event.pointerId);
@@ -270,7 +274,11 @@ function enableDragScroll(viewport, content) {
     // El puntero queda capturado por el viewport durante un gesto. Detectamos
     // el elemento visual bajo el dedo para que el tap funcione también en iOS.
     if (tappedCard && viewport.contains(tappedCard)) {
-      window.requestAnimationFrame(() => expandItemCard(tappedCard, viewport));
+      window.requestAnimationFrame(() => {
+        expandItemCard(tappedCard, viewport, { clientX: event.clientX, clientY: event.clientY });
+      });
+    } else if (rippleHost && viewport.contains(rippleHost)) {
+      addRippleFromPoint(rippleHost, event.clientX, event.clientY);
     }
   }
 
@@ -346,7 +354,7 @@ function enableDragScroll(viewport, content) {
  * Expande una tarjeta al área útil de la PDA. El estado queda abierto hasta
  * que una futura acción de "volver" restaure la lista.
  */
-function expandItemCard(card, viewport) {
+function expandItemCard(card, viewport, tapPoint = null) {
   if (expandedAppId !== null) return;
 
   const screen = viewport.closest('.neptune-screen');
@@ -396,6 +404,12 @@ function expandItemCard(card, viewport) {
 
   expansionLayer.append(expandedCard);
   screen.append(expansionLayer);
+  // El ripple se agrega a la copia para que continúe visible durante la expansión.
+  if (tapPoint) {
+    const rippleX = (tapPoint.clientX - cardRect.left) / scaleX;
+    const rippleY = (tapPoint.clientY - cardRect.top) / scaleY;
+    addRipple(expandedCard, rippleX, rippleY);
+  }
   // Se oculta solo el original después de crear la copia visible de animación.
   card.style.visibility = 'hidden';
   content.classList.add('neptune-list-content--expanding');
@@ -493,5 +507,31 @@ function collapseItemCard({ card, content, screen, expansionLayer, expandedCard 
 function parseCssDuration(value) {
   const duration = Number.parseFloat(value);
   return value.trim().endsWith('ms') ? duration : duration * 1000;
+}
+
+/** Crea un ripple en coordenadas internas de un contenedor visual. */
+function addRipple(host, x, y) {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+  const ripple = document.createElement('span');
+  ripple.className = 'neptune-ripple';
+
+  const diameter =
+    Math.hypot(Math.max(x, host.clientWidth - x), Math.max(y, host.clientHeight - y)) *
+    RIPPLE_DIAMETER_MULTIPLIER;
+  ripple.style.width = `${diameter}px`;
+  ripple.style.height = `${diameter}px`;
+  ripple.style.left = `${x - diameter / 2}px`;
+  ripple.style.top = `${y - diameter / 2}px`;
+  ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+  host.append(ripple);
+}
+
+/** Convierte un tap de pantalla a las coordenadas CSS internas del contenedor. */
+function addRippleFromPoint(host, clientX, clientY) {
+  const rect = host.getBoundingClientRect();
+  const scaleX = rect.width / host.clientWidth || 1;
+  const scaleY = rect.height / host.clientHeight || 1;
+  addRipple(host, (clientX - rect.left) / scaleX, (clientY - rect.top) / scaleY);
 }
 
