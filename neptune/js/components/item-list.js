@@ -32,7 +32,8 @@ const VELOCITY_HISTORY_WEIGHT = 0.6;
 const VELOCITY_RECENT_WEIGHT = 0.4;
 // Evita saltos de física si el navegador tarda en entregar un fotograma.
 const MAX_FRAME_TIME = 32;
-const KEYBOARD_SCROLL_STEP = 48;
+// Mantiene desactivado el blur mientras el desplazamiento nativo está activo.
+const SCROLLING_STATE_TIMEOUT = 120;
 
 /**
  * Crea una lista desplazable por arrastre de un dedo o clic sostenido.
@@ -91,9 +92,27 @@ function enableDragScroll(viewport, content) {
   let settleTimer = null;
   let settleFrame = null;
   let momentumFrame = null;
+  let cachedMaxScrollTop = 0;
+  let scrollingStateTimer = null;
 
   function maxScrollTop() {
-    return Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    return cachedMaxScrollTop;
+  }
+
+  function refreshMaxScrollTop() {
+    cachedMaxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+  }
+
+  function setScrollingState() {
+    viewport.classList.add('neptune-list-viewport--scrolling');
+    window.clearTimeout(scrollingStateTimer);
+    scrollingStateTimer = window.setTimeout(() => {
+      viewport.classList.remove('neptune-list-viewport--scrolling');
+    }, SCROLLING_STATE_TIMEOUT);
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   function setElasticOffset(offset) {
@@ -211,7 +230,11 @@ function enableDragScroll(viewport, content) {
     // transición elástica la lleve de vuelta. No la sustituye por la inercia.
     if (Math.abs(elasticOffset) > 0) {
       settleOverscroll(true);
-    } else if (hasDragged && Math.abs(velocity) >= MIN_MOMENTUM_VELOCITY) {
+    } else if (
+      !prefersReducedMotion() &&
+      hasDragged &&
+      Math.abs(velocity) >= MIN_MOMENTUM_VELOCITY
+    ) {
       startMomentum();
     } else {
       settleOverscroll(true);
@@ -219,7 +242,9 @@ function enableDragScroll(viewport, content) {
   }
 
   viewport.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // Touch usa el scroll nativo del navegador; el arrastre personalizado se
+    // reserva para mouse de escritorio, donde simula la interacción táctil.
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
 
     stopMomentum();
     clearPendingSettle();
@@ -231,6 +256,7 @@ function enableDragScroll(viewport, content) {
     lastY = event.clientY;
     lastMoveTime = event.timeStamp;
     velocity = 0;
+    refreshMaxScrollTop();
     viewport.setPointerCapture(event.pointerId);
     viewport.classList.add('neptune-list-viewport--dragging');
   });
@@ -258,25 +284,7 @@ function enableDragScroll(viewport, content) {
   viewport.addEventListener('pointerup', finishDrag);
   viewport.addEventListener('pointercancel', finishDrag);
 
-  viewport.addEventListener(
-    'wheel',
-    (event) => {
-      stopMomentum();
-      event.preventDefault();
-      scrollToPosition(viewport.scrollTop + event.deltaY);
-      settleOverscroll();
-    },
-    { passive: false }
-  );
-
-  viewport.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      scrollToPosition(
-        viewport.scrollTop + (event.key === 'ArrowDown' ? KEYBOARD_SCROLL_STEP : -KEYBOARD_SCROLL_STEP)
-      );
-      settleOverscroll();
-    }
-  });
+  // Listener pasivo: no bloquea el scroll nativo de Safari ni Chromium.
+  viewport.addEventListener('scroll', setScrollingState, { passive: true });
 }
 
