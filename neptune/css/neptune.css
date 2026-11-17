@@ -109,6 +109,8 @@
   background: var(--neptune-glass-color);
   border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
+  /* Fuerza la composición inicial del vidrio en Safari antes del primer scroll. */
+  transform: translateZ(0);
   -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
   backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
 }
@@ -214,6 +216,8 @@
   background: var(--neptune-glass-color);
   border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
+  /* Fuerza la composición inicial del vidrio en Safari antes del primer scroll. */
+  transform: translateZ(0);
   -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
   backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
   font-size: var(--neptune-item-font-size);
