@@ -34,6 +34,7 @@ const VELOCITY_RECENT_WEIGHT = 0.4;
 const MAX_FRAME_TIME = 32;
 // Mantiene desactivado el blur mientras el desplazamiento nativo está activo.
 const SCROLLING_STATE_TIMEOUT = 120;
+const KEYBOARD_SCROLL_STEP = 48;
 
 /**
  * Crea una lista desplazable por arrastre de un dedo o clic sostenido.
@@ -126,17 +127,20 @@ function enableDragScroll(viewport, content) {
     if (nextScrollTop < 0) {
       viewport.scrollTop = 0;
       setElasticOffset(Math.min(MAX_OVERSCROLL, -nextScrollTop * OVERSCROLL_RESISTANCE));
+      setScrollingState();
       return;
     }
 
     if (nextScrollTop > maximum) {
       viewport.scrollTop = maximum;
       setElasticOffset(-Math.min(MAX_OVERSCROLL, (nextScrollTop - maximum) * OVERSCROLL_RESISTANCE));
+      setScrollingState();
       return;
     }
 
     viewport.scrollTop = nextScrollTop;
     setElasticOffset(0);
+    setScrollingState();
   }
 
   function clearPendingSettle() {
@@ -242,9 +246,7 @@ function enableDragScroll(viewport, content) {
   }
 
   viewport.addEventListener('pointerdown', (event) => {
-    // Touch usa el scroll nativo del navegador; el arrastre personalizado se
-    // reserva para mouse de escritorio, donde simula la interacción táctil.
-    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     stopMomentum();
     clearPendingSettle();
@@ -284,7 +286,30 @@ function enableDragScroll(viewport, content) {
   viewport.addEventListener('pointerup', finishDrag);
   viewport.addEventListener('pointercancel', finishDrag);
 
-  // Listener pasivo: no bloquea el scroll nativo de Safari ni Chromium.
+  viewport.addEventListener(
+    'wheel',
+    (event) => {
+      stopMomentum();
+      event.preventDefault();
+      refreshMaxScrollTop();
+      scrollToPosition(viewport.scrollTop + event.deltaY);
+      settleOverscroll();
+    },
+    { passive: false }
+  );
+
+  viewport.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      refreshMaxScrollTop();
+      scrollToPosition(
+        viewport.scrollTop + (event.key === 'ArrowDown' ? KEYBOARD_SCROLL_STEP : -KEYBOARD_SCROLL_STEP)
+      );
+      settleOverscroll();
+    }
+  });
+
+  // Listener pasivo: no bloquea la entrega de eventos en Safari ni Chromium.
   viewport.addEventListener('scroll', setScrollingState, { passive: true });
 }
 
