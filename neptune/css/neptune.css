@@ -14,9 +14,17 @@
   --neptune-list-gap: 10px;
   --neptune-list-padding: 20px;
   --neptune-card-shadow: 0 3px 9px rgb(0 0 0 / 22%);
-  --neptune-card-radius: 8px;
+  --neptune-card-radius: 10px;
   --neptune-bounce-duration: 600ms;
   --neptune-bounce-easing: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* SUPERFICIES DE VIDRIO: color blanco translúcido y desenfoque del fondo. */
+  /* Reduce la opacidad alfa (el último valor) para hacer tarjetas más transparentes. */
+  --neptune-glass-color: rgb(255 255 255 / 60%);
+  /* Aumenta este valor para intensificar el desenfoque gaussiano detrás de las tarjetas. */
+  --neptune-glass-blur: 16px;
+  /* Realza o atenúa los colores visibles a través del vidrio. */
+  --neptune-glass-saturation: 120%;
 
   /* AJUSTES DEL CONTENIDO DE CADA ITEM */
   /* Tamaño y peso del texto de los items. 16 px equivale a +14.3% sobre 14 px. */
@@ -26,6 +34,11 @@
   --neptune-item-icon-text-gap: 15px;
   /* Margen del icono respecto de los bordes izquierdo y derecho de la tarjeta. */
   --neptune-item-horizontal-padding: 20px;
+
+  /* FONDO DE PANTALLA: reemplaza la ruta para seleccionar otro wallpaper. */
+  --neptune-wallpaper-image: url('../assets/backgrounds/background_1.png');
+  --neptune-wallpaper-position: center;
+  --neptune-wallpaper-size: cover;
 
   width: 100%;
   height: 100%;
@@ -40,7 +53,11 @@
   width: 100%;
   height: 100%;
   padding: 0;
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: var(--neptune-wallpaper-image);
+  background-position: var(--neptune-wallpaper-position);
+  background-repeat: no-repeat;
+  background-size: var(--neptune-wallpaper-size);
 }
 
 .neptune-list-viewport {
@@ -79,9 +96,11 @@
   width: min(var(--neptune-card-width), 100%);
   aspect-ratio: 1;
   margin-inline: auto;
-  background: #ffffff;
+  background: var(--neptune-glass-color);
   border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
+  -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
+  backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
 }
 
 /* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock_1.js. */
@@ -182,9 +201,11 @@
   padding: 0 var(--neptune-item-horizontal-padding);
   overflow: hidden;
   color: #000000;
-  background: #ffffff;
+  background: var(--neptune-glass-color);
   border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
+  -webkit-backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
+  backdrop-filter: blur(var(--neptune-glass-blur)) saturate(var(--neptune-glass-saturation));
   font-size: var(--neptune-item-font-size);
   font-weight: var(--neptune-item-font-weight);
   line-height: 1;
