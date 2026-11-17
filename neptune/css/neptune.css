@@ -14,6 +14,7 @@
   --neptune-list-gap: 10px;
   --neptune-list-padding: 20px;
   --neptune-card-shadow: 0 3px 9px rgb(0 0 0 / 22%);
+  --neptune-card-radius: 8px;
   --neptune-bounce-duration: 600ms;
   --neptune-bounce-easing: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -62,6 +63,88 @@
   transition: transform var(--neptune-bounce-duration) var(--neptune-bounce-easing);
 }
 
+/* CUADRADO DESTACADO: bloque de 440 × 440 px antes de "Item 1". */
+.neptune-featured-square {
+  display: grid;
+  place-items: center;
+  width: min(var(--neptune-card-width), 100%);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  background: #ffffff;
+  border-radius: var(--neptune-card-radius);
+  box-shadow: var(--neptune-card-shadow);
+}
+
+/* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock.js. */
+.neptune-clock {
+  width: min(var(--clock-diameter), 100%);
+  aspect-ratio: 1;
+}
+
+.neptune-clock-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.neptune-clock-tick {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--clock-tick-angle));
+}
+
+.neptune-clock-tick::before {
+  position: absolute;
+  top: var(--clock-tick-inset);
+  left: 50%;
+  width: var(--clock-tick-thickness);
+  height: var(--clock-tick-length);
+  content: '';
+  background: var(--clock-tick-color);
+  transform: translateX(-50%);
+}
+
+.neptune-clock-hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: var(--clock-hand-thickness);
+  height: var(--clock-hand-length);
+  background: var(--clock-hand-color);
+  border-radius: 999px;
+  transform: translateX(-50%) rotate(var(--clock-hand-angle));
+  transform-origin: 50% 100%;
+}
+
+.neptune-clock-hand--hour {
+  --clock-hand-length: var(--clock-hour-hand-length);
+  --clock-hand-thickness: var(--clock-hour-hand-thickness);
+  --clock-hand-color: var(--clock-hour-hand-color);
+}
+
+.neptune-clock-hand--minute {
+  --clock-hand-length: var(--clock-minute-hand-length);
+  --clock-hand-thickness: var(--clock-minute-hand-thickness);
+  --clock-hand-color: var(--clock-minute-hand-color);
+}
+
+.neptune-clock-hand--second {
+  --clock-hand-length: var(--clock-second-hand-length);
+  --clock-hand-thickness: var(--clock-second-hand-thickness);
+  --clock-hand-color: var(--clock-second-hand-color);
+}
+
+.neptune-clock-center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--clock-center-dot-diameter);
+  aspect-ratio: 1;
+  background: var(--clock-center-dot-color);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .neptune-item-card {
   display: flex;
   align-items: center;
@@ -72,6 +155,7 @@
   overflow: hidden;
   color: #000000;
   background: #ffffff;
+  border-radius: var(--neptune-card-radius);
   box-shadow: var(--neptune-card-shadow);
   font-size: 14px;
   line-height: 1;

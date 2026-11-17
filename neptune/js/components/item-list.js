@@ -44,6 +44,12 @@ export function createItemList(items) {
   const content = document.createElement('div');
   content.className = 'neptune-list-content';
 
+  // CUADRADO DESTACADO: aparece antes de "Item 1" al inicio de la lista.
+  const featuredSquare = document.createElement('div');
+  featuredSquare.className = 'neptune-featured-square';
+  featuredSquare.append(createClock());
+  content.append(featuredSquare);
+
   items.forEach((label) => {
     const card = document.createElement('article');
     card.className = 'neptune-item-card';
@@ -257,3 +263,5 @@ function enableDragScroll(viewport, content) {
     }
   });
 }
+import { createClock } from './clock.js';
+
