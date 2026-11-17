@@ -28,7 +28,7 @@
 
   /* AJUSTES DEL CONTENIDO DE CADA ITEM */
   /* Tamaño y peso del texto de los items. 16 px equivale a +14.3% sobre 14 px. */
-  --neptune-item-font-size: 16px;
+  --neptune-item-font-size: 20px;
   --neptune-item-font-weight: 600;
   /* Espacio entre el borde derecho del icono y el inicio de la palabra. */
   --neptune-item-icon-text-gap: 15px;
