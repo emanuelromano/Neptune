@@ -1,0 +1,79 @@
+/*
+ * Estilos exclusivos de la interfaz Neptune.
+ * Los estilos del simulador permanecen en styles.css.
+ */
+
+#pda-canvas {
+  overflow: hidden;
+}
+
+#neptune-app {
+  /* AJUSTES VISUALES DE LA LISTA */
+  --neptune-card-width: 440px;
+  --neptune-card-height: 60px;
+  --neptune-list-gap: 10px;
+  --neptune-list-padding: 20px;
+  --neptune-card-shadow: 0 3px 9px rgb(0 0 0 / 22%);
+  --neptune-bounce-duration: 600ms;
+  --neptune-bounce-easing: cubic-bezier(0.22, 1, 0.36, 1);
+
+  width: 100%;
+  height: 100%;
+}
+
+.neptune-shell {
+  width: 100%;
+  height: 100%;
+}
+
+.neptune-screen {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: #ffffff;
+}
+
+.neptune-list-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.neptune-list-viewport:focus-visible {
+  outline: 2px solid #1769aa;
+  outline-offset: 2px;
+}
+
+.neptune-list-viewport--dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.neptune-list-content {
+  display: grid;
+  gap: var(--neptune-list-gap);
+  padding: var(--neptune-list-padding);
+  will-change: transform;
+}
+
+.neptune-list-content--settling {
+  transition: transform var(--neptune-bounce-duration) var(--neptune-bounce-easing);
+}
+
+.neptune-item-card {
+  display: flex;
+  align-items: center;
+  width: min(var(--neptune-card-width), 100%);
+  height: var(--neptune-card-height);
+  margin-inline: auto;
+  padding: 0 10px;
+  overflow: hidden;
+  color: #000000;
+  background: #ffffff;
+  box-shadow: var(--neptune-card-shadow);
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+}

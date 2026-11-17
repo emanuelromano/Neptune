@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#292929" />
+  <title>Prototipador PDA OS</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="neptune/css/neptune.css" />
+</head>
+
+<body>
+  <main id="app">
+    <section id="controls" aria-label="Controles del simulador">
+      <fieldset class="resolution-picker">
+        <legend>Resolución y orientación</legend>
+        <div class="resolution-options">
+          <label class="resolution-option">
+            <input type="radio" name="resolution" value="pda-5-portrait" checked />
+            <span>480 × 800 — PDA 5&quot; vertical</span>
+          </label>
+          <label class="resolution-option">
+            <input type="radio" name="resolution" value="pda-5-landscape" />
+            <span>800 × 480 — PDA 5&quot; horizontal</span>
+          </label>
+          <label class="resolution-option">
+            <input type="radio" name="resolution" value="pda-7-portrait" />
+            <span>600 × 1024 — PDA 7&quot; vertical</span>
+          </label>
+          <label class="resolution-option">
+            <input type="radio" name="resolution" value="pda-7-landscape" />
+            <span>1024 × 600 — PDA 7&quot; horizontal</span>
+          </label>
+        </div>
+      </fieldset>
+      <button id="fullscreen-button" type="button">Ver en pantalla completa</button>
+    </section>
+
+    <section id="workspace" aria-label="Vista previa de la pantalla PDA">
+      <div id="canvas-shell">
+        <div id="pda-canvas" aria-label="Pantalla de Neptune">
+          <div id="neptune-app"></div>
+        </div>
+      </div>
+    </section>
+    <p id="status-message" role="status" aria-live="polite"></p>
+  </main>
+  <script src="js/script.js"></script>
+  <script type="module" src="neptune/js/app.js"></script>
+</body>
+
+</html>
