@@ -1,7 +1,7 @@
 import { createItemList } from '../components/item-list.js';
 
 const PLACEHOLDER_ITEMS = Array.from(
-  { length: 40 },
+  { length: 4 },
   (_, index) => `Item ${index + 1}`
 );
 

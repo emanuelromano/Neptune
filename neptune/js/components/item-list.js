@@ -1,3 +1,7 @@
+import { createClock } from './clock.js';
+
+const ITEM_ICON_URL = new URL('../../assets/icons/placeholder.png', import.meta.url).href;
+
 /*
  * AJUSTES DE GESTOS — modifica estos valores para calibrar el tacto de la lista.
  * Las dimensiones, sombras y duración visual del rebote están en neptune.css.
@@ -53,7 +57,16 @@ export function createItemList(items) {
   items.forEach((label) => {
     const card = document.createElement('article');
     card.className = 'neptune-item-card';
-    card.textContent = label;
+    const icon = document.createElement('img');
+    icon.className = 'neptune-item-icon';
+    icon.src = ITEM_ICON_URL;
+    icon.alt = '';
+
+    const itemLabel = document.createElement('span');
+    itemLabel.className = 'neptune-item-label';
+    itemLabel.textContent = label;
+
+    card.append(icon, itemLabel);
     content.append(card);
   });
 
@@ -263,5 +276,4 @@ function enableDragScroll(viewport, content) {
     }
   });
 }
-import { createClock } from './clock.js';
 
