@@ -77,14 +77,32 @@
 
 /* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock.js. */
 .neptune-clock {
-  width: min(var(--clock-diameter), 100%);
-  aspect-ratio: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .neptune-clock-face {
   position: relative;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  width: min(var(--clock-diameter), 100%);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+
+.neptune-clock-digital {
+  position: absolute;
+  top: var(--clock-digital-top);
+  right: var(--clock-digital-right);
+  width: var(--clock-digital-width);
+  margin: 0;
+  color: var(--clock-digital-color);
+  font-size: var(--clock-digital-font-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
 }
 
 .neptune-clock-tick {
