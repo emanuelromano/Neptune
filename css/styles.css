@@ -35,6 +35,20 @@ select {
   background: #292929;
 }
 
+/* Comportamiento de interfaz táctil: evita seleccionar o arrastrar contenido visual. */
+#app,
+#app * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app img,
+#app svg {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 #controls {
   display: flex;
   align-items: center;

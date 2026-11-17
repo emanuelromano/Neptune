@@ -21,6 +21,16 @@
   --neptune-app-expand-duration: 460ms;
   --neptune-app-expand-easing: cubic-bezier(0.22, 0.8, 0.2, 1);
   --neptune-app-expand-margin: 20px;
+  /* Botón de volver dentro de una aplicación abierta. */
+  /* 24 px del icono + 10 px de padding a cada lado. */
+  --neptune-app-back-button-size: 44px;
+  --neptune-app-back-button-offset: 10px;
+  --neptune-app-back-button-padding: 10px;
+  --neptune-app-back-button-color: #ffffff;
+  --neptune-app-back-button-active-color: #e6e6e6;
+  --neptune-app-back-button-shadow: 0 2px 6px rgb(0 0 0 / 18%);
+  /* Radio independiente del botón de volver. */
+  --neptune-app-back-button-radius: 7px;
 
   /* SUPERFICIES DE VIDRIO: color blanco translúcido y desenfoque del fondo. */
   /* Reduce la opacidad alfa (el último valor) para hacer tarjetas más transparentes. */
@@ -265,6 +275,46 @@
   margin-top: 5px;
 }
 
+.neptune-app-back-button {
+  position: absolute;
+  top: var(--neptune-app-back-button-offset);
+  right: var(--neptune-app-back-button-offset);
+  display: grid;
+  place-items: center;
+  width: var(--neptune-app-back-button-size);
+  height: var(--neptune-app-back-button-size);
+  padding: var(--neptune-app-back-button-padding);
+  color: #000000;
+  background: var(--neptune-app-back-button-color);
+  border: 0;
+  border-radius: var(--neptune-app-back-button-radius);
+  box-shadow: var(--neptune-app-back-button-shadow);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: auto;
+  transition:
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.neptune-app-expansion-card--expanded .neptune-app-back-button {
+  opacity: 1;
+}
+
+.neptune-app-back-button:active {
+  background-color: var(--neptune-app-back-button-active-color);
+}
+
+.neptune-app-back-button:focus-visible {
+  outline: 3px solid #1769aa;
+  outline-offset: 2px;
+}
+
+.neptune-app-back-icon {
+  width: 24px;
+  height: 24px;
+}
+
 .neptune-item-icon {
   flex: 0 0 auto;
   width: 30px;
@@ -295,7 +345,8 @@
   }
 
   .neptune-list-content--expanding > *,
-  .neptune-app-expansion-card {
+  .neptune-app-expansion-card,
+  .neptune-app-back-button {
     transition: none;
   }
 }

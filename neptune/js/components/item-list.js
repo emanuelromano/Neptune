@@ -70,6 +70,7 @@ export function createItemList(items) {
     icon.className = 'neptune-item-icon';
     icon.src = new URL(item.icon, ICONS_DIRECTORY_URL).href;
     icon.alt = '';
+    icon.draggable = false;
 
     const itemLabel = document.createElement('span');
     itemLabel.className = 'neptune-item-label';
@@ -386,6 +387,12 @@ function expandItemCard(card, viewport) {
   expandedCard.removeAttribute('tabindex');
   expandedCard.removeAttribute('role');
 
+  const backButton = createBackButton();
+  backButton.addEventListener('click', () => {
+    collapseItemCard({ card, content, screen, expansionLayer, expandedCard });
+  });
+  expandedCard.append(backButton);
+
   expansionLayer.append(expandedCard);
   screen.append(expansionLayer);
   // Se oculta solo el original después de crear la copia visible de animación.
@@ -395,5 +402,66 @@ function expandItemCard(card, viewport) {
   window.requestAnimationFrame(() => {
     expandedCard.classList.add('neptune-app-expansion-card--expanded');
   });
+}
+
+function createBackButton() {
+  const button = document.createElement('button');
+  button.className = 'neptune-app-back-button';
+  button.type = 'button';
+  button.setAttribute('aria-label', 'Volver a la lista de aplicaciones');
+
+  const icon = document.createElement('img');
+  icon.className = 'neptune-app-back-icon';
+  icon.src = new URL('arrow_back.svg', ICONS_DIRECTORY_URL).href;
+  icon.alt = '';
+  icon.draggable = false;
+
+  button.append(icon);
+  return button;
+}
+
+/** Ejecuta la misma transición de expansión en sentido inverso. */
+function collapseItemCard({ card, content, screen, expansionLayer, expandedCard }) {
+  if (expandedCard.dataset.isCollapsing === 'true') return;
+  expandedCard.dataset.isCollapsing = 'true';
+  expandedCard.classList.remove('neptune-app-expansion-card--expanded');
+  content.classList.remove('neptune-list-content--expanding');
+
+  let hasFinished = false;
+  const finishCollapse = () => {
+    if (hasFinished) return;
+    hasFinished = true;
+    card.style.visibility = '';
+    card.classList.remove('neptune-item-card--selected');
+    expansionLayer.remove();
+    delete screen.dataset.activeApp;
+    expandedAppId = null;
+  };
+
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    window.requestAnimationFrame(finishCollapse);
+    return;
+  }
+
+  const transitionDuration = Math.max(
+    ...getComputedStyle(expandedCard).transitionDuration.split(',').map(parseCssDuration)
+  );
+  const fallbackTimer = window.setTimeout(finishCollapse, transitionDuration + 100);
+
+  const onTransitionEnd = (event) => {
+    if (event.target !== expandedCard || event.propertyName !== 'width') return;
+
+    window.clearTimeout(fallbackTimer);
+    expandedCard.removeEventListener('transitionend', onTransitionEnd);
+    finishCollapse();
+  };
+
+  expandedCard.addEventListener('transitionend', onTransitionEnd);
+}
+
+/** Convierte duraciones CSS como "460ms" o "0.46s" a milisegundos. */
+function parseCssDuration(value) {
+  const duration = Number.parseFloat(value);
+  return value.trim().endsWith('ms') ? duration : duration * 1000;
 }
 
