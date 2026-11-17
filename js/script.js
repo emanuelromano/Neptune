@@ -13,7 +13,7 @@
   const canvas = document.getElementById('pda-canvas');
   const fullscreenButton = document.getElementById('fullscreen-button');
   const statusMessage = document.getElementById('status-message');
-  const resolutionInputs = document.querySelectorAll('input[name="resolution"]');
+  const resolutionSelect = document.getElementById('resolution-select');
 
   let selectedResolution = RESOLUTIONS['pda-5-portrait'];
 
@@ -80,10 +80,8 @@
 
   window.exitFullscreen = exitFullscreen;
 
-  resolutionInputs.forEach((input) => {
-    input.addEventListener('change', () => {
-      if (input.checked) setResolution(input.value);
-    });
+  resolutionSelect.addEventListener('change', () => {
+    setResolution(resolutionSelect.value);
   });
 
   fullscreenButton.addEventListener('click', enterFullscreen);

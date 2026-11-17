@@ -13,27 +13,15 @@
 <body>
   <main id="app">
     <section id="controls" aria-label="Controles del simulador">
-      <fieldset class="resolution-picker">
-        <legend>Resolución y orientación</legend>
-        <div class="resolution-options">
-          <label class="resolution-option">
-            <input type="radio" name="resolution" value="pda-5-portrait" checked />
-            <span>480 × 800 — PDA 5&quot; vertical</span>
-          </label>
-          <label class="resolution-option">
-            <input type="radio" name="resolution" value="pda-5-landscape" />
-            <span>800 × 480 — PDA 5&quot; horizontal</span>
-          </label>
-          <label class="resolution-option">
-            <input type="radio" name="resolution" value="pda-7-portrait" />
-            <span>600 × 1024 — PDA 7&quot; vertical</span>
-          </label>
-          <label class="resolution-option">
-            <input type="radio" name="resolution" value="pda-7-landscape" />
-            <span>1024 × 600 — PDA 7&quot; horizontal</span>
-          </label>
-        </div>
-      </fieldset>
+      <div class="resolution-picker">
+        <label for="resolution-select">Resolución y orientación</label>
+        <select id="resolution-select" name="resolution">
+          <option value="pda-5-portrait" selected>480 × 800 — PDA 5&quot; vertical</option>
+          <option value="pda-5-landscape">800 × 480 — PDA 5&quot; horizontal</option>
+          <option value="pda-7-portrait">600 × 1024 — PDA 7&quot; vertical</option>
+          <option value="pda-7-landscape">1024 × 600 — PDA 7&quot; horizontal</option>
+        </select>
+      </div>
       <button id="fullscreen-button" type="button">Ver en pantalla completa</button>
     </section>
 

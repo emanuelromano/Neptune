@@ -21,7 +21,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -46,50 +47,30 @@ input {
 }
 
 .resolution-picker {
-  display: block;
+  display: grid;
+  gap: 0.35rem;
   min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
 }
 
-.resolution-picker legend {
-  padding: 0;
-  margin-bottom: 0.75rem;
+.resolution-picker label {
   color: #ffffff;
   font-weight: 700;
 }
 
-.resolution-options {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.resolution-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
+#resolution-select {
+  min-width: 250px;
   min-height: 44px;
-  padding: 0.5rem 0.65rem;
+  padding: 0.5rem 2.25rem 0.5rem 0.65rem;
   color: #f5f5f5;
   background: #444444;
   border: 1px solid #606060;
   border-radius: 0.35rem;
   cursor: pointer;
-  user-select: none;
 }
 
-.resolution-option:focus-within {
+#resolution-select:focus-visible {
   outline: 3px solid #8dc7ff;
   outline-offset: 2px;
-}
-
-.resolution-option input {
-  width: 1.15rem;
-  height: 1.15rem;
-  margin: 0;
-  accent-color: #1c86e5;
 }
 
 #fullscreen-button {
