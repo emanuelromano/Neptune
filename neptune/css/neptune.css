@@ -24,11 +24,11 @@
 
   /* SUPERFICIES DE VIDRIO: color blanco translúcido y desenfoque del fondo. */
   /* Reduce la opacidad alfa (el último valor) para hacer tarjetas más transparentes. */
-  --neptune-glass-color: rgb(255 255 255 / 60%);
+  --neptune-glass-color: rgb(255 255 255 / 80%);
   /* Aumenta este valor para intensificar el desenfoque gaussiano detrás de las tarjetas. */
   --neptune-glass-blur: 16px;
   /* Realza o atenúa los colores visibles a través del vidrio. */
-  --neptune-glass-saturation: 120%;
+  --neptune-glass-saturation: 100%;
 
   /* AJUSTES DEL CONTENIDO DE CADA ITEM */
   /* Tamaño y peso del texto de los items. 16 px equivale a +14.3% sobre 14 px. */
