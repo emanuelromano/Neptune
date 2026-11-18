@@ -39,6 +39,7 @@
   --neptune-settings-row-color: rgb(255 255 255 / 88%);
   --neptune-settings-switch-off-color: #8e8e93;
   --neptune-settings-switch-on-color: #ff8a00;
+  --neptune-font-scale: 1;
   /* Ripple: onda gris suave que se expande y difumina dentro de cada superficie. */
   --neptune-ripple-color: rgb(88 88 88 / 30%);
   --neptune-ripple-duration: 580ms;
@@ -160,7 +161,13 @@
   transform: translateZ(0);
 }
 
-/* Reloj analógico dentro del CUADRADO DESTACADO. Sus medidas se configuran en clock_1.js. */
+/* Contenedor de la app featured Clock; otra watchface ocupa el mismo espacio. */
+.neptune-featured-app-host {
+  width: 100%;
+  height: 100%;
+}
+
+/* App Clock dentro del CUADRADO DESTACADO; la watchface activa se monta desde apps/clock. */
 .neptune-clock {
   position: relative;
   width: 100%;
@@ -265,7 +272,7 @@
   box-shadow: var(--neptune-card-shadow);
   /* Fuerza la composición inicial del vidrio en Safari antes del primer scroll. */
   transform: translateZ(0);
-  font-size: var(--neptune-item-font-size);
+  font-size: calc(var(--neptune-item-font-size) * var(--neptune-font-scale));
   font-weight: var(--neptune-item-font-weight);
   line-height: 1;
   white-space: nowrap;
@@ -304,6 +311,13 @@
   left: var(--neptune-app-expand-margin);
   width: var(--app-expand-target-width);
   height: var(--app-expand-target-height);
+}
+
+/* Área donde el navegador monta la app elegida dentro de su tarjeta abierta. */
+.neptune-app-content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 /* El título queda a 25 px del borde superior; el icono conserva los 20 px. */
@@ -430,6 +444,8 @@
   justify-content: space-between;
   min-height: 64px;
   padding: 12px 14px;
+  /* Tamaño compartido por el texto y los controles de cada fila de Configuración. */
+  font-size: calc(18px * var(--neptune-font-scale));
   color: var(--neptune-text-color);
   background: var(--neptune-settings-row-color);
   border-radius: var(--neptune-card-radius);
@@ -437,8 +453,37 @@
 }
 
 .neptune-settings-theme-label {
-  font-size: 18px;
+  font-size: inherit;
   font-weight: 600;
+}
+
+.neptune-settings-watchface-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  /* Tamaño compartido con la lista desplegable de esta tarjeta. */
+  font-size: calc(18px * var(--neptune-font-scale));
+  color: var(--neptune-text-color);
+  background: var(--neptune-settings-row-color);
+  border-radius: var(--neptune-card-radius);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%);
+}
+
+.neptune-settings-watchface-select {
+  max-width: 190px;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  color: var(--neptune-text-color);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  /* Hereda el tamaño de la etiqueta de la fila, p. ej. "Tamaño de texto". */
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 /* Switch accesible: el input real conserva foco y el track imita a iOS. */

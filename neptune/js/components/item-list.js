@@ -1,105 +1,81 @@
-import { createClock } from './clock_1.js';
-import { createInlineIcon } from './icons.js';
-import { getPersistedTheme, toggleTheme } from '../theme.js';
-
 /*
- * AJUSTES DE GESTOS — modifica estos valores para calibrar el tacto de la lista.
- * Las dimensiones, sombras y duración visual del rebote están en neptune.css.
+ * LISTA DE APLICACIONES
+ * Renderiza el catálogo definido en apps/registry.js. La navegación y las
+ * apps concretas viven fuera de este componente para mantenerlo reutilizable.
  */
+import { createInlineIcon } from './icons.js';
 
-// Píxeles necesarios antes de considerar que un toque se convirtió en arrastre.
 const DRAG_THRESHOLD = 3;
-
-// --- Rebote en los extremos ---
-// Máxima distancia visual (px) que puede estirarse la lista sobre un borde.
 const MAX_OVERSCROLL = 60;
-// Resistencia del borde: menor = más duro; mayor = se estira más fácilmente.
-const OVERSCROLL_RESISTANCE = 1.50;
-// Debe ser apenas mayor que la duración CSS del rebote (600 ms) para limpiarlo.
+const OVERSCROLL_RESISTANCE = 1.5;
 const OVERSCROLL_CLEANUP_DELAY = 650;
-
-// --- Inercia al soltar ---
-// Tasa de desaceleración exponencial (por ms): mayor = frena antes; menor =
-// una cola más larga y natural. Es el control principal de suavidad de inercia.
 const MOMENTUM_DECELERATION_RATE = 0.0015;
-// Multiplicador de la velocidad inicial: mayor = recorre más distancia.
 const MOMENTUM_BOOST = 1.15;
-// Velocidad mínima (px/ms) antes de detener la inercia: mayor = para antes.
-// Este valor bajo evita que el último tramo se corte de forma perceptible.
 const MIN_MOMENTUM_VELOCITY = 0.002;
-// Pesos para medir la velocidad: prioriza el tramo más reciente del gesto.
 const VELOCITY_HISTORY_WEIGHT = 0.6;
 const VELOCITY_RECENT_WEIGHT = 0.4;
-// Evita saltos de física si el navegador tarda en entregar un fotograma.
 const MAX_FRAME_TIME = 32;
-// Mantiene desactivado el blur mientras el desplazamiento nativo está activo.
-const SCROLLING_STATE_TIMEOUT = 120;
 const KEYBOARD_SCROLL_STEP = 48;
-// Evita activar una aplicación al finalizar un gesto de arrastre.
 const TAP_LOCK_AFTER_DRAG = 250;
-// Tamaño relativo del ripple: menor = círculo más contenido dentro del elemento.
-const RIPPLE_DIAMETER_MULTIPLIER = 0.50;
+const RIPPLE_DIAMETER_MULTIPLIER = 1.35;
 
-let expandedAppId = null;
-
-/**
- * Crea una lista desplazable por arrastre de un dedo o clic sostenido.
- * El desplazamiento extra en los bordes se transforma en una respuesta elástica.
- */
-export function createItemList(items) {
+export function createAppList({ featuredApp, apps, navigator, root }) {
   const viewport = document.createElement('div');
   viewport.className = 'neptune-list-viewport';
-  viewport.setAttribute('aria-label', 'Lista de items');
+  viewport.setAttribute('aria-label', 'Lista de aplicaciones');
   viewport.setAttribute('role', 'region');
   viewport.tabIndex = 0;
 
   const content = document.createElement('div');
   content.className = 'neptune-list-content';
-
-  // CUADRADO DESTACADO: aparece antes de "Item 1" al inicio de la lista.
   const featuredSquare = document.createElement('div');
   featuredSquare.className = 'neptune-featured-square';
-  featuredSquare.append(createClock());
+  const featuredHost = document.createElement('div');
+  featuredHost.className = 'neptune-featured-app-host';
+  featuredSquare.append(featuredHost);
   content.append(featuredSquare);
 
-  // ENTIDADES DE APLICACIÓN: cada tarjeta conserva su id para la futura vista
-  // ampliada y obtiene su texto e icono desde NEPTUNE_APPS en screens/home.js.
-  items.forEach((item) => {
-    const card = document.createElement('article');
-    card.className = 'neptune-item-card';
-    card.dataset.appId = item.id;
-    const icon = createInlineIcon(item.icon, 'neptune-item-icon');
-
-    const itemLabel = document.createElement('span');
-    itemLabel.className = 'neptune-item-label';
-    itemLabel.textContent = item.label;
-
-    card.append(icon, itemLabel);
-    card.setAttribute('role', 'button');
-    card.tabIndex = 0;
-    card.setAttribute('aria-label', `Abrir ${item.label}`);
-    card.addEventListener('click', (event) => {
-      const tapLockUntil = Number(viewport.dataset.neptuneTapLockUntil ?? 0);
-      if (performance.now() >= tapLockUntil) {
-        expandItemCard(card, viewport, { clientX: event.clientX, clientY: event.clientY });
-      }
-    });
-    card.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        expandItemCard(card, viewport);
-      }
-    });
-    content.append(card);
+  // Clock es una app featured: mantiene su tarjeta cuadrada pero se monta aparte.
+  featuredApp.load().then((module) => {
+    module.mount(featuredHost, { root, app: featuredApp });
   });
 
+  apps.forEach((app) => content.append(createAppCard(app, viewport, navigator)));
   viewport.append(content);
-  enableDragScroll(viewport, content);
-
+  enableDragScroll(viewport, content, navigator, apps);
   return viewport;
 }
 
-function enableDragScroll(viewport, content) {
+function createAppCard(app, viewport, navigator) {
+  const card = document.createElement('article');
+  card.className = 'neptune-item-card';
+  card.dataset.appId = app.id;
+  card.setAttribute('role', 'button');
+  card.tabIndex = 0;
+  card.setAttribute('aria-label', `Abrir ${app.title}`);
+  card.append(createInlineIcon(app.icon, 'neptune-item-icon'));
+
+  const label = document.createElement('span');
+  label.className = 'neptune-item-label';
+  label.textContent = app.title;
+  card.append(label);
+
+  card.addEventListener('click', (event) => {
+    const tapLockUntil = Number(viewport.dataset.neptuneTapLockUntil ?? 0);
+    if (performance.now() >= tapLockUntil) {
+      navigator.open(app, card, viewport, { clientX: event.clientX, clientY: event.clientY });
+    }
+  });
+  card.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      navigator.open(app, card, viewport);
+    }
+  });
+  return card;
+}
+
+function enableDragScroll(viewport, content, navigator, apps) {
   let activePointerId = null;
   let startY = 0;
   let startScrollTop = 0;
@@ -114,10 +90,6 @@ function enableDragScroll(viewport, content) {
   let cachedMaxScrollTop = 0;
   let scrollingStateTimer = null;
 
-  function maxScrollTop() {
-    return cachedMaxScrollTop;
-  }
-
   function refreshMaxScrollTop() {
     cachedMaxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
   }
@@ -127,11 +99,7 @@ function enableDragScroll(viewport, content) {
     window.clearTimeout(scrollingStateTimer);
     scrollingStateTimer = window.setTimeout(() => {
       viewport.classList.remove('neptune-list-viewport--scrolling');
-    }, SCROLLING_STATE_TIMEOUT);
-  }
-
-  function prefersReducedMotion() {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    }, 120);
   }
 
   function setElasticOffset(offset) {
@@ -139,42 +107,29 @@ function enableDragScroll(viewport, content) {
     content.style.transform = `translateY(${offset}px)`;
   }
 
-  function scrollToPosition(nextScrollTop) {
-    const maximum = maxScrollTop();
-
-    if (nextScrollTop < 0) {
+  function scrollToPosition(nextPosition) {
+    if (nextPosition < 0) {
       viewport.scrollTop = 0;
-      setElasticOffset(Math.min(MAX_OVERSCROLL, -nextScrollTop * OVERSCROLL_RESISTANCE));
-      setScrollingState();
-      return;
+      setElasticOffset(Math.min(MAX_OVERSCROLL, -nextPosition * OVERSCROLL_RESISTANCE));
+    } else if (nextPosition > cachedMaxScrollTop) {
+      viewport.scrollTop = cachedMaxScrollTop;
+      setElasticOffset(-Math.min(MAX_OVERSCROLL, (nextPosition - cachedMaxScrollTop) * OVERSCROLL_RESISTANCE));
+    } else {
+      viewport.scrollTop = nextPosition;
+      setElasticOffset(0);
     }
-
-    if (nextScrollTop > maximum) {
-      viewport.scrollTop = maximum;
-      setElasticOffset(-Math.min(MAX_OVERSCROLL, (nextScrollTop - maximum) * OVERSCROLL_RESISTANCE));
-      setScrollingState();
-      return;
-    }
-
-    viewport.scrollTop = nextScrollTop;
-    setElasticOffset(0);
     setScrollingState();
   }
 
   function clearPendingSettle() {
     window.clearTimeout(settleTimer);
-    settleTimer = null;
-
-    if (settleFrame !== null) {
-      window.cancelAnimationFrame(settleFrame);
-      settleFrame = null;
-    }
+    if (settleFrame !== null) window.cancelAnimationFrame(settleFrame);
+    settleFrame = null;
   }
 
-  function settleOverscroll(deferUntilNextFrame = false) {
+  function settleOverscroll(defer = false) {
     clearPendingSettle();
-
-    const startSettling = () => {
+    const start = () => {
       content.classList.add('neptune-list-content--settling');
       setElasticOffset(0);
       settleTimer = window.setTimeout(() => {
@@ -182,101 +137,71 @@ function enableDragScroll(viewport, content) {
         content.style.transform = '';
       }, OVERSCROLL_CLEANUP_DELAY);
     };
-
-    if (deferUntilNextFrame) {
+    if (defer) {
       settleFrame = window.requestAnimationFrame(() => {
-        // Deja que el estiramiento se pinte antes de iniciar el retorno.
         settleFrame = window.requestAnimationFrame(() => {
           settleFrame = null;
-          startSettling();
+          start();
         });
       });
     } else {
-      startSettling();
+      start();
     }
   }
 
   function stopMomentum() {
-    if (momentumFrame !== null) {
-      window.cancelAnimationFrame(momentumFrame);
-      momentumFrame = null;
-    }
+    if (momentumFrame !== null) window.cancelAnimationFrame(momentumFrame);
+    momentumFrame = null;
   }
 
   function startMomentum() {
     velocity *= MOMENTUM_BOOST;
     let previousTime = performance.now();
-
-    function animate(currentTime) {
+    const animate = (currentTime) => {
       const elapsed = Math.min(currentTime - previousTime, MAX_FRAME_TIME);
       previousTime = currentTime;
       const nextPosition = viewport.scrollTop + velocity * elapsed;
-      const maximum = maxScrollTop();
-
-      // Al alcanzar un límite, muestra el último tramo elástico y rebota.
-      if (nextPosition < 0 || nextPosition > maximum) {
+      if (nextPosition < 0 || nextPosition > cachedMaxScrollTop) {
         scrollToPosition(nextPosition);
         momentumFrame = null;
-        // El exceso se pinta primero; la vuelta ocurre en el siguiente frame.
         settleOverscroll(true);
         return;
       }
-
       scrollToPosition(nextPosition);
-      // Desaceleración exponencial continua, como una lista táctil nativa.
       velocity *= Math.exp(-MOMENTUM_DECELERATION_RATE * elapsed);
-
       if (Math.abs(velocity) < MIN_MOMENTUM_VELOCITY) {
         momentumFrame = null;
         settleOverscroll();
         return;
       }
-
       momentumFrame = window.requestAnimationFrame(animate);
-    }
-
+    };
     momentumFrame = window.requestAnimationFrame(animate);
   }
 
   function finishDrag(event) {
     if (event.pointerId !== activePointerId) return;
-
     const wasTap = event.type === 'pointerup' && !hasDragged;
-    const tappedTarget = wasTap ? document.elementFromPoint(event.clientX, event.clientY) : null;
-    const tappedCard = tappedTarget?.closest('.neptune-item-card');
-    const rippleHost = tappedTarget?.closest('.neptune-item-card, .neptune-featured-square');
+    const target = wasTap ? document.elementFromPoint(event.clientX, event.clientY) : null;
+    const card = target?.closest('.neptune-item-card');
+    const rippleHost = target?.closest('.neptune-item-card, .neptune-featured-square');
 
-    if (viewport.hasPointerCapture(event.pointerId)) {
-      viewport.releasePointerCapture(event.pointerId);
-    }
-
+    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
     activePointerId = null;
     viewport.classList.remove('neptune-list-viewport--dragging');
+    if (hasDragged) viewport.dataset.neptuneTapLockUntil = String(performance.now() + TAP_LOCK_AFTER_DRAG);
 
-    if (hasDragged) {
-      viewport.dataset.neptuneTapLockUntil = String(performance.now() + TAP_LOCK_AFTER_DRAG);
-    }
-
-    // Si el usuario ya estiró el borde, conserva esa posición y deja que la
-    // transición elástica la lleve de vuelta. No la sustituye por la inercia.
     if (Math.abs(elasticOffset) > 0) {
       settleOverscroll(true);
-    } else if (
-      !prefersReducedMotion() &&
-      hasDragged &&
-      Math.abs(velocity) >= MIN_MOMENTUM_VELOCITY
-    ) {
+    } else if (!prefersReducedMotion() && hasDragged && Math.abs(velocity) >= MIN_MOMENTUM_VELOCITY) {
       startMomentum();
     } else {
       settleOverscroll(true);
     }
 
-    // El puntero queda capturado por el viewport durante un gesto. Detectamos
-    // el elemento visual bajo el dedo para que el tap funcione también en iOS.
-    if (tappedCard && viewport.contains(tappedCard)) {
-      window.requestAnimationFrame(() => {
-        expandItemCard(tappedCard, viewport, { clientX: event.clientX, clientY: event.clientY });
-      });
+    if (card && viewport.contains(card)) {
+      const app = apps.find((candidate) => candidate.id === card.dataset.appId);
+      if (app) window.requestAnimationFrame(() => navigator.open(app, card, viewport, event));
     } else if (rippleHost && viewport.contains(rippleHost)) {
       addRippleFromPoint(rippleHost, event.clientX, event.clientY);
     }
@@ -284,16 +209,15 @@ function enableDragScroll(viewport, content) {
 
   viewport.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-
     stopMomentum();
     clearPendingSettle();
     content.classList.remove('neptune-list-content--settling');
     activePointerId = event.pointerId;
     startY = event.clientY;
     startScrollTop = viewport.scrollTop;
-    hasDragged = false;
     lastY = event.clientY;
     lastMoveTime = event.timeStamp;
+    hasDragged = false;
     velocity = 0;
     refreshMaxScrollTop();
     viewport.setPointerCapture(event.pointerId);
@@ -302,223 +226,49 @@ function enableDragScroll(viewport, content) {
 
   viewport.addEventListener('pointermove', (event) => {
     if (event.pointerId !== activePointerId) return;
-
     const distance = startY - event.clientY;
     hasDragged ||= Math.abs(distance) >= DRAG_THRESHOLD;
-
-    if (hasDragged) {
-      const elapsed = Math.max(1, event.timeStamp - lastMoveTime);
-      const movement = lastY - event.clientY;
-      const measuredVelocity = movement / elapsed;
-
-      velocity =
-        velocity * VELOCITY_HISTORY_WEIGHT + measuredVelocity * VELOCITY_RECENT_WEIGHT;
-      lastY = event.clientY;
-      lastMoveTime = event.timeStamp;
-      event.preventDefault();
-      scrollToPosition(startScrollTop + distance);
-    }
+    if (!hasDragged) return;
+    const elapsed = Math.max(1, event.timeStamp - lastMoveTime);
+    const measuredVelocity = (lastY - event.clientY) / elapsed;
+    velocity = velocity * VELOCITY_HISTORY_WEIGHT + measuredVelocity * VELOCITY_RECENT_WEIGHT;
+    lastY = event.clientY;
+    lastMoveTime = event.timeStamp;
+    event.preventDefault();
+    scrollToPosition(startScrollTop + distance);
   });
 
   viewport.addEventListener('pointerup', finishDrag);
   viewport.addEventListener('pointercancel', finishDrag);
-
-  viewport.addEventListener(
-    'wheel',
-    (event) => {
-      stopMomentum();
-      event.preventDefault();
-      refreshMaxScrollTop();
-      scrollToPosition(viewport.scrollTop + event.deltaY);
-      settleOverscroll();
-    },
-    { passive: false }
-  );
-
+  viewport.addEventListener('wheel', (event) => {
+    stopMomentum();
+    event.preventDefault();
+    refreshMaxScrollTop();
+    scrollToPosition(viewport.scrollTop + event.deltaY);
+    settleOverscroll();
+  }, { passive: false });
   viewport.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      refreshMaxScrollTop();
-      scrollToPosition(
-        viewport.scrollTop + (event.key === 'ArrowDown' ? KEYBOARD_SCROLL_STEP : -KEYBOARD_SCROLL_STEP)
-      );
-      settleOverscroll();
-    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    refreshMaxScrollTop();
+    scrollToPosition(viewport.scrollTop + (event.key === 'ArrowDown' ? KEYBOARD_SCROLL_STEP : -KEYBOARD_SCROLL_STEP));
+    settleOverscroll();
   });
-
-  // Listener pasivo: no bloquea la entrega de eventos en Safari ni Chromium.
   viewport.addEventListener('scroll', setScrollingState, { passive: true });
 }
 
-/**
- * Expande una tarjeta al área útil de la PDA. El estado queda abierto hasta
- * que una futura acción de "volver" restaure la lista.
- */
-function expandItemCard(card, viewport, tapPoint = null) {
-  if (expandedAppId !== null) return;
-
-  const screen = viewport.closest('.neptune-screen');
-  const content = viewport.querySelector('.neptune-list-content');
-  if (!screen || !content) return;
-
-  const screenRect = screen.getBoundingClientRect();
-  const cardRect = card.getBoundingClientRect();
-  const scaleX = screenRect.width / screen.clientWidth || 1;
-  const scaleY = screenRect.height / screen.clientHeight || 1;
-  const startLeft = (cardRect.left - screenRect.left) / scaleX;
-  const startTop = (cardRect.top - screenRect.top) / scaleY;
-  const startWidth = cardRect.width / scaleX;
-  const startHeight = cardRect.height / scaleY;
-  const expansionMargin =
-    Number.parseFloat(getComputedStyle(screen).getPropertyValue('--neptune-app-expand-margin')) || 20;
-
-  expandedAppId = card.dataset.appId ?? 'active-app';
-  screen.dataset.activeApp = expandedAppId;
-  card.classList.add('neptune-item-card--selected');
-
-  const expansionLayer = document.createElement('div');
-  expansionLayer.className = 'neptune-app-expansion-layer';
-
-  const expandedCard = card.cloneNode(true);
-  expandedCard.classList.remove('neptune-item-card--selected');
-  expandedCard.classList.add('neptune-app-expansion-card');
-  expandedCard.style.setProperty('--app-expand-start-left', `${startLeft}px`);
-  expandedCard.style.setProperty('--app-expand-start-top', `${startTop}px`);
-  expandedCard.style.setProperty('--app-expand-start-width', `${startWidth}px`);
-  expandedCard.style.setProperty('--app-expand-start-height', `${startHeight}px`);
-  expandedCard.style.setProperty('--app-expand-target-width', `${screen.clientWidth - expansionMargin * 2}px`);
-  expandedCard.style.setProperty('--app-expand-target-height', `${screen.clientHeight - expansionMargin * 2}px`);
-  expandedCard.removeAttribute('tabindex');
-  expandedCard.removeAttribute('role');
-
-  const backButton = createBackButton();
-  backButton.addEventListener('click', () => {
-    collapseItemCard({ card, content, screen, expansionLayer, expandedCard });
-  });
-  expandedCard.append(backButton);
-
-  // El panel de ajustes se crea solo para la entidad Configuración.
-  if (expandedAppId === 'settings') {
-    expandedCard.append(createSettingsPanel());
-  }
-
-  expansionLayer.append(expandedCard);
-  screen.append(expansionLayer);
-  // El ripple se agrega a la copia para que continúe visible durante la expansión.
-  if (tapPoint) {
-    const rippleX = (tapPoint.clientX - cardRect.left) / scaleX;
-    const rippleY = (tapPoint.clientY - cardRect.top) / scaleY;
-    addRipple(expandedCard, rippleX, rippleY);
-  }
-  // Se oculta solo el original después de crear la copia visible de animación.
-  card.style.visibility = 'hidden';
-  content.classList.add('neptune-list-content--expanding');
-
-  window.requestAnimationFrame(() => {
-    expandedCard.classList.add('neptune-app-expansion-card--expanded');
-  });
+function addRippleFromPoint(host, clientX, clientY) {
+  const rect = host.getBoundingClientRect();
+  const scaleX = rect.width / host.clientWidth || 1;
+  const scaleY = rect.height / host.clientHeight || 1;
+  addRipple(host, (clientX - rect.left) / scaleX, (clientY - rect.top) / scaleY);
 }
 
-function createBackButton() {
-  const button = document.createElement('button');
-  button.className = 'neptune-app-back-button';
-  button.type = 'button';
-  button.setAttribute('aria-label', 'Volver a la lista de aplicaciones');
-
-  const icon = createInlineIcon('arrow-back', 'neptune-app-back-icon');
-
-  button.append(icon);
-  return button;
-}
-
-/** Panel exclusivo de Configuración que contiene el interruptor de tema. */
-function createSettingsPanel() {
-  const panel = document.createElement('section');
-  panel.className = 'neptune-settings-panel';
-  panel.setAttribute('aria-label', 'Ajustes de apariencia');
-
-  const row = document.createElement('label');
-  row.className = 'neptune-settings-theme-row';
-
-  const label = document.createElement('span');
-  label.className = 'neptune-settings-theme-label';
-  label.textContent = 'Modo oscuro';
-
-  const input = document.createElement('input');
-  input.className = 'neptune-settings-theme-input';
-  input.type = 'checkbox';
-  input.checked = getPersistedTheme() === 'dark';
-  input.setAttribute('aria-label', 'Activar modo oscuro');
-
-  const track = document.createElement('span');
-  track.className = 'neptune-settings-theme-switch';
-  track.setAttribute('aria-hidden', 'true');
-
-  input.addEventListener('change', () => {
-    toggleTheme(document.getElementById('neptune-app'));
-  });
-
-  row.append(label, input, track);
-  panel.append(row);
-
-  return panel;
-}
-
-/** Ejecuta la misma transición de expansión en sentido inverso. */
-function collapseItemCard({ card, content, screen, expansionLayer, expandedCard }) {
-  if (expandedCard.dataset.isCollapsing === 'true') return;
-  expandedCard.dataset.isCollapsing = 'true';
-  expandedCard.classList.remove('neptune-app-expansion-card--expanded');
-  content.classList.remove('neptune-list-content--expanding');
-
-  let hasFinished = false;
-  const finishCollapse = () => {
-    if (hasFinished) return;
-    hasFinished = true;
-    card.style.visibility = '';
-    card.classList.remove('neptune-item-card--selected');
-    expansionLayer.remove();
-    delete screen.dataset.activeApp;
-    expandedAppId = null;
-  };
-
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-    window.requestAnimationFrame(finishCollapse);
-    return;
-  }
-
-  const transitionDuration = Math.max(
-    ...getComputedStyle(expandedCard).transitionDuration.split(',').map(parseCssDuration)
-  );
-  const fallbackTimer = window.setTimeout(finishCollapse, transitionDuration + 100);
-
-  const onTransitionEnd = (event) => {
-    if (event.target !== expandedCard || event.propertyName !== 'width') return;
-
-    window.clearTimeout(fallbackTimer);
-    expandedCard.removeEventListener('transitionend', onTransitionEnd);
-    finishCollapse();
-  };
-
-  expandedCard.addEventListener('transitionend', onTransitionEnd);
-}
-
-/** Convierte duraciones CSS como "460ms" o "0.46s" a milisegundos. */
-function parseCssDuration(value) {
-  const duration = Number.parseFloat(value);
-  return value.trim().endsWith('ms') ? duration : duration * 1000;
-}
-
-/** Crea un ripple en coordenadas internas de un contenedor visual. */
 function addRipple(host, x, y) {
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-
+  if (prefersReducedMotion()) return;
   const ripple = document.createElement('span');
   ripple.className = 'neptune-ripple';
-
-  const diameter =
-    Math.hypot(Math.max(x, host.clientWidth - x), Math.max(y, host.clientHeight - y)) *
-    RIPPLE_DIAMETER_MULTIPLIER;
+  const diameter = Math.hypot(Math.max(x, host.clientWidth - x), Math.max(y, host.clientHeight - y)) * RIPPLE_DIAMETER_MULTIPLIER;
   ripple.style.width = `${diameter}px`;
   ripple.style.height = `${diameter}px`;
   ripple.style.left = `${x - diameter / 2}px`;
@@ -527,11 +277,6 @@ function addRipple(host, x, y) {
   host.append(ripple);
 }
 
-/** Convierte un tap de pantalla a las coordenadas CSS internas del contenedor. */
-function addRippleFromPoint(host, clientX, clientY) {
-  const rect = host.getBoundingClientRect();
-  const scaleX = rect.width / host.clientWidth || 1;
-  const scaleY = rect.height / host.clientHeight || 1;
-  addRipple(host, (clientX - rect.left) / scaleX, (clientY - rect.top) / scaleY);
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
-

@@ -1,13 +1,14 @@
-import { getPersistedTheme } from './theme.js';
+import { getPreferences } from '../core/preferences.js';
 
 /**
  * Estado central de la UI. Se irá ampliando al incorporar navegación,
  * preferencias y datos de las aplicaciones de Neptune.
  */
 export function createNeptuneState() {
+  const preferences = getPreferences();
   return {
     screen: 'home',
-    // Tema inicial recuperado desde localStorage, o claro como valor seguro.
-    theme: getPersistedTheme()
+    // Snapshot inicial; las apps se actualizan después por suscripción.
+    preferences
   };
 }

@@ -1,21 +1,18 @@
-import { createItemList } from '../components/item-list.js';
+import { APPLICATIONS, FEATURED_APP } from '../../apps/registry.js';
+import { createNavigator } from '../../core/navigator.js';
+import { createAppList } from '../components/item-list.js';
 
-/*
- * APLICACIONES DE NEPTUNE: cada objeto representa una tarjeta y, más adelante,
- * su propia mini ventana a pantalla completa. Edita aquí el id, nombre o icono.
- */
-const NEPTUNE_APPS = [
-  { id: 'calendar', label: 'Calendario', icon: 'calendar' },
-  { id: 'notes', label: 'Notas', icon: 'notes' },
-  { id: 'contacts', label: 'Contactos', icon: 'contacts' },
-  { id: 'settings', label: 'Configuración', icon: 'settings' }
-];
-
-export function createHomeScreen() {
+export function createHomeScreen(root) {
   const screen = document.createElement('section');
   screen.className = 'neptune-screen neptune-home';
   screen.setAttribute('aria-label', 'Inicio');
-  screen.append(createItemList(NEPTUNE_APPS));
+  const navigator = createNavigator(root);
+  screen.append(createAppList({
+    featuredApp: FEATURED_APP,
+    apps: APPLICATIONS,
+    navigator,
+    root
+  }));
 
   return screen;
 }

@@ -1,94 +1,62 @@
-import { getPersistedTheme, THEME_CHANGE_EVENT } from '../theme.js';
-
 /*
- * CONFIGURACIÓN DEL RELOJ ANALÓGICO
- * Todas las medidas están en píxeles. Ajusta estos valores para cambiar el
- * aspecto del reloj sin modificar la lógica que calcula la hora.
+ * WATCHFACE 1 — Analógica clásica
+ * Las dimensiones se ajustan aquí; los colores reaccionan a preferencias.theme.
  */
-const CLOCK_CONFIG = Object.freeze({
-  // Diámetro total del reloj; se mantiene centrado dentro del cuadrado padre.
-  diameter: 360,
+import { getPreferences, subscribePreferences } from '../../../core/preferences.js';
 
-  // Marcas horarias: largo, grosor y color de las 12 líneas del perímetro.
+const CLOCK_CONFIG = Object.freeze({
+  diameter: 360,
   tickLength: 14,
   tickThickness: 5,
-  tickColor: '#3f3f3f',
-  // Separación entre el borde del reloj y el inicio de cada marca horaria.
   tickInset: 8,
-
-  // Aguja de horas: largo, grosor y color.
   hourHandLength: 85,
   hourHandThickness: 8,
-  hourHandColor: '#000000',
-
-  // Aguja de minutos: largo, grosor y color.
   minuteHandLength: 140,
   minuteHandThickness: 6,
-  minuteHandColor: '#000000',
-
-  // Aguja de segundos: largo, grosor y color.
   secondHandLength: 145,
   secondHandThickness: 2,
-  secondHandColor: '#d62525',
-
-  // Círculo central: diámetro y color.
   centerDotDiameter: 16,
   centerDotColor: '#d62525',
-
-  // Hora digital (24 h): tamaño, color y ancho con alineación a la derecha.
   digitalTimeFontSize: 24,
-  digitalTimeColor: '#000000',
   digitalTimeWidth: 110,
-  // Márgenes respecto de la esquina superior derecha del cuadrado contenedor.
-  digitalTimeTop: 18,
-  digitalTimeRight: 18
+  digitalTimeTop: 20,
+  digitalTimeRight: 20
 });
 
-/* Colores del reloj para cada tema; las dimensiones siguen en CLOCK_CONFIG. */
-const CLOCK_THEME_COLORS = Object.freeze({
+const THEME_COLORS = Object.freeze({
   light: {
-    tickColor: '#3f3f3f',
-    hourHandColor: '#000000',
-    minuteHandColor: '#000000',
-    secondHandColor: '#d62525',
-    digitalTimeColor: '#000000'
+    tick: '#3f3f3f',
+    hour: '#000000',
+    minute: '#000000',
+    second: '#d62525',
+    digital: '#000000'
   },
   dark: {
-    tickColor: '#c9c9c9',
-    hourHandColor: '#ffffff',
-    minuteHandColor: '#ffffff',
-    secondHandColor: '#d62525',
-    digitalTimeColor: '#ffffff'
+    tick: '#c9c9c9',
+    hour: '#ffffff',
+    minute: '#ffffff',
+    second: '#d62525',
+    digital: '#ffffff'
   }
 });
 
-/** Crea un reloj analógico que se actualiza una vez por segundo. */
-export function createClock() {
+export function mount(container) {
   const clock = document.createElement('div');
   clock.className = 'neptune-clock';
   clock.setAttribute('role', 'group');
   clock.setAttribute('aria-label', 'Reloj analógico');
-  applyClockConfiguration(clock);
-  applyClockTheme(clock, getPersistedTheme());
-
-  // El reloj cambia sus trazos y texto cuando Configuración modifica el tema.
-  window.addEventListener(THEME_CHANGE_EVENT, (event) => {
-    applyClockTheme(clock, event.detail.theme);
-  });
+  applyConfiguration(clock);
 
   const face = document.createElement('div');
   face.className = 'neptune-clock-face';
-
   const digitalTime = document.createElement('time');
   digitalTime.className = 'neptune-clock-digital';
   digitalTime.setAttribute('aria-label', 'Hora digital');
 
-  // Se crean 12 marcas, una por cada hora del reloj.
   for (let hour = 0; hour < 12; hour += 1) {
     const tick = document.createElement('span');
     tick.className = 'neptune-clock-tick';
     tick.style.setProperty('--clock-tick-angle', `${hour * 30}deg`);
-    tick.setAttribute('aria-hidden', 'true');
     face.append(tick);
   }
 
@@ -97,10 +65,9 @@ export function createClock() {
   const secondHand = createHand('second');
   const centerDot = document.createElement('span');
   centerDot.className = 'neptune-clock-center-dot';
-  centerDot.setAttribute('aria-hidden', 'true');
-
   face.append(hourHand, minuteHand, secondHand, centerDot);
   clock.append(face, digitalTime);
+  container.append(clock);
 
   function updateClock() {
     const now = new Date();
@@ -112,58 +79,56 @@ export function createClock() {
     minuteHand.style.setProperty('--clock-hand-angle', `${minutes * 6 + seconds * 0.1}deg`);
     secondHand.style.setProperty('--clock-hand-angle', `${seconds * 6}deg`);
     digitalTime.textContent = `${now.getHours()}:${String(minutes).padStart(2, '0')}`;
-    digitalTime.dateTime = `${String(now.getHours()).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
+  applyTheme(clock, getPreferences().theme);
   updateClock();
-  window.setInterval(updateClock, 1000);
+  const interval = window.setInterval(updateClock, 1000);
+  const unsubscribe = subscribePreferences((next, previous) => {
+    if (next.theme !== previous.theme) applyTheme(clock, next.theme);
+  });
 
-  return clock;
+  return () => {
+    window.clearInterval(interval);
+    unsubscribe();
+    clock.remove();
+  };
 }
 
 function createHand(type) {
   const hand = document.createElement('span');
   hand.className = `neptune-clock-hand neptune-clock-hand--${type}`;
-  hand.setAttribute('aria-hidden', 'true');
-
   return hand;
 }
 
-function applyClockConfiguration(clock) {
+function applyConfiguration(clock) {
   const values = {
     '--clock-diameter': `${CLOCK_CONFIG.diameter}px`,
     '--clock-tick-length': `${CLOCK_CONFIG.tickLength}px`,
     '--clock-tick-thickness': `${CLOCK_CONFIG.tickThickness}px`,
-    '--clock-tick-color': CLOCK_CONFIG.tickColor,
     '--clock-tick-inset': `${CLOCK_CONFIG.tickInset}px`,
     '--clock-hour-hand-length': `${CLOCK_CONFIG.hourHandLength}px`,
     '--clock-hour-hand-thickness': `${CLOCK_CONFIG.hourHandThickness}px`,
-    '--clock-hour-hand-color': CLOCK_CONFIG.hourHandColor,
     '--clock-minute-hand-length': `${CLOCK_CONFIG.minuteHandLength}px`,
     '--clock-minute-hand-thickness': `${CLOCK_CONFIG.minuteHandThickness}px`,
-    '--clock-minute-hand-color': CLOCK_CONFIG.minuteHandColor,
     '--clock-second-hand-length': `${CLOCK_CONFIG.secondHandLength}px`,
     '--clock-second-hand-thickness': `${CLOCK_CONFIG.secondHandThickness}px`,
-    '--clock-second-hand-color': CLOCK_CONFIG.secondHandColor,
     '--clock-center-dot-diameter': `${CLOCK_CONFIG.centerDotDiameter}px`,
     '--clock-center-dot-color': CLOCK_CONFIG.centerDotColor,
     '--clock-digital-font-size': `${CLOCK_CONFIG.digitalTimeFontSize}px`,
-    '--clock-digital-color': CLOCK_CONFIG.digitalTimeColor,
     '--clock-digital-width': `${CLOCK_CONFIG.digitalTimeWidth}px`,
     '--clock-digital-top': `${CLOCK_CONFIG.digitalTimeTop}px`,
     '--clock-digital-right': `${CLOCK_CONFIG.digitalTimeRight}px`
   };
 
-  Object.entries(values).forEach(([name, value]) => {
-    clock.style.setProperty(name, value);
-  });
+  Object.entries(values).forEach(([name, value]) => clock.style.setProperty(name, value));
 }
 
-function applyClockTheme(clock, theme) {
-  const colors = CLOCK_THEME_COLORS[theme] ?? CLOCK_THEME_COLORS.light;
-  clock.style.setProperty('--clock-tick-color', colors.tickColor);
-  clock.style.setProperty('--clock-hour-hand-color', colors.hourHandColor);
-  clock.style.setProperty('--clock-minute-hand-color', colors.minuteHandColor);
-  clock.style.setProperty('--clock-second-hand-color', colors.secondHandColor);
-  clock.style.setProperty('--clock-digital-color', colors.digitalTimeColor);
+function applyTheme(clock, theme) {
+  const colors = THEME_COLORS[theme] ?? THEME_COLORS.light;
+  clock.style.setProperty('--clock-tick-color', colors.tick);
+  clock.style.setProperty('--clock-hour-hand-color', colors.hour);
+  clock.style.setProperty('--clock-minute-hand-color', colors.minute);
+  clock.style.setProperty('--clock-second-hand-color', colors.second);
+  clock.style.setProperty('--clock-digital-color', colors.digital);
 }
