@@ -5,6 +5,9 @@
  */
 import { createInlineIcon } from '../js/components/icons.js';
 
+// Alcance final del ripple: 45 % menor que la versión anterior (1.35).
+const RIPPLE_DIAMETER_MULTIPLIER = 0.7425;
+
 export function createNavigator(root) {
   let activeSession = null;
 
@@ -137,7 +140,7 @@ function addRipple(host, x, y) {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   const ripple = document.createElement('span');
   ripple.className = 'neptune-ripple';
-  const diameter = Math.hypot(Math.max(x, host.clientWidth - x), Math.max(y, host.clientHeight - y)) * 1.35;
+  const diameter = Math.hypot(Math.max(x, host.clientWidth - x), Math.max(y, host.clientHeight - y)) * RIPPLE_DIAMETER_MULTIPLIER;
   ripple.style.width = `${diameter}px`;
   ripple.style.height = `${diameter}px`;
   ripple.style.left = `${x - diameter / 2}px`;

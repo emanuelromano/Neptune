@@ -17,7 +17,8 @@ const VELOCITY_RECENT_WEIGHT = 0.4;
 const MAX_FRAME_TIME = 32;
 const KEYBOARD_SCROLL_STEP = 48;
 const TAP_LOCK_AFTER_DRAG = 250;
-const RIPPLE_DIAMETER_MULTIPLIER = 1.35;
+// Alcance final del ripple: 45 % menor que la versión anterior (1.35).
+const RIPPLE_DIAMETER_MULTIPLIER = 0.7425;
 
 export function createAppList({ featuredApp, apps, navigator, root }) {
   const viewport = document.createElement('div');

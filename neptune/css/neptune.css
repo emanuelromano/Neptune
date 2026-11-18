@@ -37,11 +37,18 @@
   --neptune-icon-color: #000000;
   --neptune-screen-color: #ffffff;
   --neptune-settings-row-color: rgb(255 255 255 / 88%);
+  /* Selectores: borde suave y opciones legibles en el menú nativo. */
+  --neptune-settings-select-border-color: #d1d1d6;
+  --neptune-settings-select-option-color: #ffffff;
   --neptune-settings-switch-off-color: #8e8e93;
-  --neptune-settings-switch-on-color: #ff8a00;
+  /* ACENTO DEL SISTEMA: se actualiza desde Configuración y se guarda localmente. */
+  --neptune-accent-color: #ff3b30;
+  --neptune-accent-contrast-color: #ffffff;
+  --neptune-settings-switch-on-color: var(--neptune-accent-color);
+  --neptune-settings-accent-selection-color: #8e8e93;
   --neptune-font-scale: 1;
-  /* Ripple: onda gris suave que se expande y difumina dentro de cada superficie. */
-  --neptune-ripple-color: rgb(88 88 88 / 30%);
+  /* Ripple: usa el acento con transparencia; el controlador lo actualiza al elegir color. */
+  --neptune-ripple-color: rgb(255 59 48 / 30%);
   --neptune-ripple-duration: 580ms;
 
   /* SUPERFICIES DE VIDRIO: color blanco translúcido y desenfoque del fondo. */
@@ -66,6 +73,8 @@
   --neptune-wallpaper-position: center;
   --neptune-wallpaper-size: cover;
 
+  /* Indica al navegador cómo dibujar controles nativos, como <select>. */
+  color-scheme: light;
   width: 100%;
   height: 100%;
   opacity: 1;
@@ -82,8 +91,12 @@
   --neptune-app-back-button-color: #3c3c3c;
   --neptune-app-back-button-active-color: #525252;
   --neptune-settings-row-color: #3a3a3a;
+  /* Gris por encima de la tarjeta oscura, con opciones oscuras y texto blanco. */
+  --neptune-settings-select-border-color: #606064;
+  --neptune-settings-select-option-color: #3a3a3a;
+  --neptune-settings-accent-selection-color: #b0b0b5;
   --neptune-settings-switch-off-color: #6b6b70;
-  --neptune-ripple-color: rgb(255 255 255 / 30%);
+  color-scheme: dark;
 }
 
 /* Fade breve al cambiar los tokens de tema. */
@@ -457,6 +470,68 @@
   font-weight: 600;
 }
 
+/* TARJETA "COLOR DE ACENTO": más alta para alojar título y paleta en dos líneas. */
+.neptune-settings-accent-row {
+  display: flex;
+  flex-direction: column;
+  /* Alinea el título al padding superior estándar de las demás tarjetas. */
+  justify-content: flex-start;
+  /* La altura nace del contenido: 12 px de padding también bajo la paleta. */
+  min-height: 0;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: calc(18px * var(--neptune-font-scale));
+  color: var(--neptune-text-color);
+  background: var(--neptune-settings-row-color);
+  border-radius: var(--neptune-card-radius);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%);
+}
+
+/* Los seis colores se distribuyen a lo ancho de la tarjeta. */
+.neptune-settings-accent-palette {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.neptune-settings-accent-option {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  appearance: none;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+/* Círculo de color. El tamaño aprovecha el ancho disponible sin saturar la tarjeta. */
+.neptune-settings-accent-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/* Aro gris de 3 px, separado 3 px del color, para identificar la selección activa. */
+.neptune-settings-accent-option--selected .neptune-settings-accent-swatch {
+  outline: 3px solid var(--neptune-settings-accent-selection-color);
+  outline-offset: 3px;
+  transform: scale(0.94);
+}
+
+.neptune-settings-accent-option:focus-visible {
+  outline: 3px solid var(--neptune-accent-color);
+  outline-offset: 2px;
+}
+
 .neptune-settings-watchface-row {
   display: flex;
   align-items: center;
@@ -473,17 +548,98 @@
 }
 
 .neptune-settings-watchface-select {
-  max-width: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   min-height: 36px;
   padding: 0 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
   color: var(--neptune-text-color);
   background: transparent;
-  border: 1px solid currentColor;
+  /* Borde discreto: gris claro en claro y gris elevado en oscuro. */
+  border: 1px solid var(--neptune-settings-select-border-color);
   border-radius: 6px;
   /* Hereda el tamaño de la etiqueta de la fila, p. ej. "Tamaño de texto". */
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.neptune-settings-watchface-select::after {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  content: '⌄';
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Contenedor del desplegable propio: permite colorear la selección en cualquier navegador. */
+.neptune-settings-dropdown {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 190px;
+  min-width: 120px;
+}
+
+.neptune-settings-dropdown--open {
+  z-index: 4;
+}
+
+.neptune-settings-dropdown-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--neptune-settings-select-option-color);
+  border: 1px solid var(--neptune-settings-select-border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+}
+
+.neptune-settings-dropdown--open .neptune-settings-dropdown-options {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.neptune-settings-dropdown-option {
+  min-height: 34px;
+  padding: 0 8px;
+  overflow: hidden;
+  color: var(--neptune-text-color);
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+/* El ítem activo usa el acento elegido en "Color de acento", no el azul nativo. */
+.neptune-settings-dropdown-option--selected {
+  color: var(--neptune-accent-contrast-color);
+  background-color: var(--neptune-accent-color);
+}
+
+.neptune-settings-dropdown-option:focus-visible {
+  outline: 2px solid var(--neptune-accent-color);
+  outline-offset: 1px;
 }
 
 /* Switch accesible: el input real conserva foco y el track imita a iOS. */
@@ -501,7 +657,8 @@
   height: 32px;
   background: var(--neptune-settings-switch-off-color);
   border-radius: 999px;
-  transition: background-color 180ms ease;
+  /* Fade al modificar el color de acento desde la tarjeta anterior. */
+  transition: background-color 220ms ease;
 }
 
 .neptune-settings-theme-switch::after {

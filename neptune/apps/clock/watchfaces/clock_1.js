@@ -1,6 +1,6 @@
 /*
  * WATCHFACE 1 — Analógica clásica
- * Las dimensiones se ajustan aquí; los colores reaccionan a preferencias.theme.
+ * Las dimensiones se ajustan aquí; los colores reaccionan al tema y al acento.
  */
 import { getPreferences, subscribePreferences } from '../../../core/preferences.js';
 
@@ -16,7 +16,6 @@ const CLOCK_CONFIG = Object.freeze({
   secondHandLength: 145,
   secondHandThickness: 2,
   centerDotDiameter: 16,
-  centerDotColor: '#d62525',
   digitalTimeFontSize: 24,
   digitalTimeWidth: 110,
   digitalTimeTop: 20,
@@ -26,16 +25,10 @@ const CLOCK_CONFIG = Object.freeze({
 const THEME_COLORS = Object.freeze({
   light: {
     tick: '#3f3f3f',
-    hour: '#000000',
-    minute: '#000000',
-    second: '#d62525',
     digital: '#000000'
   },
   dark: {
     tick: '#c9c9c9',
-    hour: '#ffffff',
-    minute: '#ffffff',
-    second: '#d62525',
     digital: '#ffffff'
   }
 });
@@ -81,11 +74,13 @@ export function mount(container) {
     digitalTime.textContent = `${now.getHours()}:${String(minutes).padStart(2, '0')}`;
   }
 
-  applyTheme(clock, getPreferences().theme);
+  applyTheme(clock, getPreferences());
   updateClock();
   const interval = window.setInterval(updateClock, 1000);
   const unsubscribe = subscribePreferences((next, previous) => {
-    if (next.theme !== previous.theme) applyTheme(clock, next.theme);
+    if (next.theme !== previous.theme || next.accentColor !== previous.accentColor) {
+      applyTheme(clock, next);
+    }
   });
 
   return () => {
@@ -114,7 +109,6 @@ function applyConfiguration(clock) {
     '--clock-second-hand-length': `${CLOCK_CONFIG.secondHandLength}px`,
     '--clock-second-hand-thickness': `${CLOCK_CONFIG.secondHandThickness}px`,
     '--clock-center-dot-diameter': `${CLOCK_CONFIG.centerDotDiameter}px`,
-    '--clock-center-dot-color': CLOCK_CONFIG.centerDotColor,
     '--clock-digital-font-size': `${CLOCK_CONFIG.digitalTimeFontSize}px`,
     '--clock-digital-width': `${CLOCK_CONFIG.digitalTimeWidth}px`,
     '--clock-digital-top': `${CLOCK_CONFIG.digitalTimeTop}px`,
@@ -124,11 +118,17 @@ function applyConfiguration(clock) {
   Object.entries(values).forEach(([name, value]) => clock.style.setProperty(name, value));
 }
 
-function applyTheme(clock, theme) {
-  const colors = THEME_COLORS[theme] ?? THEME_COLORS.light;
+function applyTheme(clock, preferences) {
+  const colors = THEME_COLORS[preferences.theme] ?? THEME_COLORS.light;
+  // Las agujas principales toman el acento seleccionado desde Configuración.
+  const accentColor = preferences.accentColor ?? '#ff3b30';
   clock.style.setProperty('--clock-tick-color', colors.tick);
-  clock.style.setProperty('--clock-hour-hand-color', colors.hour);
-  clock.style.setProperty('--clock-minute-hand-color', colors.minute);
-  clock.style.setProperty('--clock-second-hand-color', colors.second);
-  clock.style.setProperty('--clock-digital-color', colors.digital);
+  clock.style.setProperty('--clock-hour-hand-color', accentColor);
+  clock.style.setProperty('--clock-minute-hand-color', accentColor);
+  // Segundos adopta el color neutro de la hora digital en cada tema.
+  clock.style.setProperty('--clock-second-hand-color', colors.digital);
+  // El punto central acompaña a la aguja de segundos, no al color de acento.
+  clock.style.setProperty('--clock-center-dot-color', colors.digital);
+  // La hora digital forma parte de los elementos destacados por el acento.
+  clock.style.setProperty('--clock-digital-color', accentColor);
 }

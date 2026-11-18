@@ -9,7 +9,9 @@ const DEFAULT_PREFERENCES = Object.freeze({
   theme: 'light',
   fontScale: 1,
   reduceMotion: false,
-  selectedWatchface: 'clock_1'
+  selectedWatchface: 'clock_1',
+  // Color compartido por los componentes que adopten el acento del sistema.
+  accentColor: '#ff3b30'
 });
 
 const subscribers = new Set();
