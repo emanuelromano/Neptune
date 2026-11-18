@@ -3,6 +3,15 @@
  * Los estilos del simulador permanecen en styles.css.
  */
 
+/* DM Serif Display (SIL Open Font License 1.1), servida localmente para Analog 2. */
+@font-face {
+  font-family: 'DM Serif Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/DMSerifDisplay-Regular.ttf') format('truetype');
+}
+
 #pda-canvas {
   overflow: hidden;
 }
@@ -155,9 +164,13 @@
   transition: transform var(--neptune-bounce-duration) var(--neptune-bounce-easing);
 }
 
+/* Mantiene la transición tanto al ocultar como al recuperar el fondo. */
+.neptune-list-content > * {
+  transition: opacity var(--neptune-app-expand-duration) var(--neptune-app-expand-easing);
+}
+
 .neptune-list-content--expanding > * {
   opacity: 0;
-  transition: opacity var(--neptune-app-expand-duration) var(--neptune-app-expand-easing);
 }
 
 /* CUADRADO DESTACADO: bloque de 440 × 440 px antes de "Item 1". */
@@ -227,6 +240,42 @@
   height: var(--clock-tick-length);
   content: '';
   background: var(--clock-tick-color);
+  transform: translateX(-50%);
+}
+
+/* WATCHFACE ANALOG 2: números serif y puntos exteriores para los 60 minutos. */
+.neptune-clock-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: var(--clock-number-color);
+  /* Fuente serif incluida localmente: no depende de la instalación del sistema. */
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--clock-number-font-size);
+  font-weight: 400;
+  line-height: 1;
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--clock-number-angle))
+    translateY(var(--clock-number-offset))
+    rotate(var(--clock-number-counter-angle));
+}
+
+.neptune-clock-minute-point {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--clock-minute-point-angle));
+}
+
+.neptune-clock-minute-point::before {
+  position: absolute;
+  top: var(--clock-minute-point-inset);
+  left: 50%;
+  width: var(--clock-minute-point-size);
+  aspect-ratio: 1;
+  content: '';
+  background: var(--clock-minute-point-color);
+  border-radius: 50%;
   transform: translateX(-50%);
 }
 
@@ -715,7 +764,7 @@
     transition: none;
   }
 
-  .neptune-list-content--expanding > *,
+  .neptune-list-content > *,
   .neptune-app-expansion-card,
   .neptune-app-back-button,
   .neptune-item-icon,

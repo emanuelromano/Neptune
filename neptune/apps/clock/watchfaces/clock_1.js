@@ -38,7 +38,7 @@ export function mount(container) {
   const clock = document.createElement('div');
   clock.className = 'neptune-clock';
   clock.setAttribute('role', 'group');
-  clock.setAttribute('aria-label', t('clock.analogLabel'));
+  clock.setAttribute('aria-label', t('clock.analog1Label'));
   applyConfiguration(clock);
 
   const face = document.createElement('div');
@@ -84,7 +84,7 @@ export function mount(container) {
     }
   });
   const unsubscribeLanguage = subscribeLanguage(() => {
-    clock.setAttribute('aria-label', t('clock.analogLabel'));
+    clock.setAttribute('aria-label', t('clock.analog1Label'));
     digitalTime.setAttribute('aria-label', t('clock.digitalLabel'));
   });
 

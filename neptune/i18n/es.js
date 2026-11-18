@@ -26,9 +26,11 @@ export default Object.freeze({
   'app.settings': 'Configuración',
   'navigation.backToApps': 'Volver a la lista de aplicaciones',
 
-  'clock.analogLabel': 'Reloj analógico',
+  'clock.analog1Label': 'Reloj Analógico 1',
+  'clock.analog2Label': 'Reloj Analógico 2',
   'clock.digitalLabel': 'Hora digital',
-  'watchface.analog': 'Analógico',
+  'watchface.analog1': 'Analógico 1',
+  'watchface.analog2': 'Analógico 2',
 
   'settings.panelLabel': 'Ajustes de apariencia',
   'settings.accentColor': 'Color de acento',
