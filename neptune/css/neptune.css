@@ -34,7 +34,8 @@
 
   /* TOKENS DE TEMA CLARO: colores compartidos por texto, iconos y superficies. */
   --neptune-text-color: #000000;
-  --neptune-icon-color: #000000;
+  /* Todos los SVG inline usan este token y adoptan el acento seleccionado. */
+  --neptune-icon-color: var(--neptune-accent-color);
   --neptune-screen-color: #ffffff;
   --neptune-settings-row-color: rgb(255 255 255 / 88%);
   /* Selectores: borde suave y opciones legibles en el menú nativo. */
@@ -44,6 +45,8 @@
   /* ACENTO DEL SISTEMA: se actualiza desde Configuración y se guarda localmente. */
   --neptune-accent-color: #ff3b30;
   --neptune-accent-contrast-color: #ffffff;
+  /* Duración compartida para los cambios visuales del color de acento. */
+  --neptune-accent-transition: 220ms ease;
   --neptune-settings-switch-on-color: var(--neptune-accent-color);
   --neptune-settings-accent-selection-color: #8e8e93;
   --neptune-font-scale: 1;
@@ -84,7 +87,6 @@
 /* TEMA OSCURO: sustituye wallpaper, superficies, textos e iconos. */
 #neptune-app[data-theme='dark'] {
   --neptune-text-color: #ffffff;
-  --neptune-icon-color: #ffffff;
   --neptune-screen-color: #161616;
   --neptune-glass-color: #303030;
   --neptune-wallpaper-image: url('../assets/backgrounds/background_2.png');
@@ -347,7 +349,8 @@
   width: var(--neptune-app-back-button-size);
   height: var(--neptune-app-back-button-size);
   padding: var(--neptune-app-back-button-padding);
-  color: var(--neptune-text-color);
+  /* El SVG de volver también forma parte de los iconos con color de acento. */
+  color: var(--neptune-icon-color);
   background: var(--neptune-app-back-button-color);
   border: 0;
   border-radius: var(--neptune-app-back-button-radius);
@@ -358,7 +361,8 @@
   pointer-events: auto;
   transition:
     background-color 160ms ease,
-    opacity 160ms ease;
+    opacity 160ms ease,
+    color var(--neptune-accent-transition);
 }
 
 .neptune-app-expansion-card--expanded .neptune-app-back-button {
@@ -392,6 +396,8 @@
   color: var(--neptune-icon-color);
   position: relative;
   z-index: 1;
+  /* Fade del SVG al modificar el color de acento. */
+  transition: color var(--neptune-accent-transition);
 }
 
 .neptune-item-label {
@@ -712,6 +718,7 @@
   .neptune-list-content--expanding > *,
   .neptune-app-expansion-card,
   .neptune-app-back-button,
+  .neptune-item-icon,
   .neptune-settings-panel,
   .neptune-settings-theme-switch,
   .neptune-settings-theme-switch::after,
