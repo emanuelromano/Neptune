@@ -10,6 +10,8 @@ const DEFAULT_PREFERENCES = Object.freeze({
   fontScale: 1,
   reduceMotion: false,
   selectedWatchface: 'clock_1',
+  // Idioma de la interfaz; inglés es el valor inicial para instalaciones nuevas.
+  language: 'en',
   // Color compartido por los componentes que adopten el acento del sistema.
   accentColor: '#ff3b30'
 });

@@ -3,6 +3,7 @@
  * Las dimensiones se ajustan aquí; los colores reaccionan al tema y al acento.
  */
 import { getPreferences, subscribePreferences } from '../../../core/preferences.js';
+import { subscribeLanguage, t } from '../../../i18n/index.js';
 
 const CLOCK_CONFIG = Object.freeze({
   diameter: 360,
@@ -37,14 +38,14 @@ export function mount(container) {
   const clock = document.createElement('div');
   clock.className = 'neptune-clock';
   clock.setAttribute('role', 'group');
-  clock.setAttribute('aria-label', 'Reloj analógico');
+  clock.setAttribute('aria-label', t('clock.analogLabel'));
   applyConfiguration(clock);
 
   const face = document.createElement('div');
   face.className = 'neptune-clock-face';
   const digitalTime = document.createElement('time');
   digitalTime.className = 'neptune-clock-digital';
-  digitalTime.setAttribute('aria-label', 'Hora digital');
+  digitalTime.setAttribute('aria-label', t('clock.digitalLabel'));
 
   for (let hour = 0; hour < 12; hour += 1) {
     const tick = document.createElement('span');
@@ -82,10 +83,15 @@ export function mount(container) {
       applyTheme(clock, next);
     }
   });
+  const unsubscribeLanguage = subscribeLanguage(() => {
+    clock.setAttribute('aria-label', t('clock.analogLabel'));
+    digitalTime.setAttribute('aria-label', t('clock.digitalLabel'));
+  });
 
   return () => {
     window.clearInterval(interval);
     unsubscribe();
+    unsubscribeLanguage();
     clock.remove();
   };
 }

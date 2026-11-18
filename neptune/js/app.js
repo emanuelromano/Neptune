@@ -2,6 +2,7 @@ import { createAppShell } from './components/app-shell.js';
 import { createHomeScreen } from './screens/home.js';
 import { createNeptuneState } from './state.js';
 import { applyThemeTokens, mountThemeController } from '../core/theme-controller.js';
+import { mountI18nController } from '../i18n/index.js';
 
 const mountPoint = document.getElementById('neptune-app');
 
@@ -10,6 +11,7 @@ if (mountPoint) {
   // Aplica preferencias persistidas antes del primer render y luego las observa.
   applyThemeTokens(mountPoint, state.preferences);
   mountThemeController(mountPoint);
+  mountI18nController();
   const appShell = createAppShell(state);
 
   if (state.screen === 'home') {

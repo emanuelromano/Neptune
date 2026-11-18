@@ -1,40 +1,40 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#292929" />
-  <title>Prototipador PDA OS</title>
+  <title>Neptune PDA UI Prototype</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="neptune/css/neptune.css" />
 </head>
 
 <body>
   <main id="app">
-    <section id="controls" aria-label="Controles del simulador">
+    <section id="controls" aria-label="Simulator controls">
       <div class="resolution-picker">
-        <label for="resolution-select">Resolución y orientación</label>
+        <label for="resolution-select">Resolution and orientation</label>
         <select id="resolution-select" name="resolution">
-          <option value="pda-5-portrait" selected>480 × 800 — PDA 5&quot; vertical</option>
-          <option value="pda-5-landscape">800 × 480 — PDA 5&quot; horizontal</option>
-          <option value="pda-7-portrait">600 × 1024 — PDA 7&quot; vertical</option>
-          <option value="pda-7-landscape">1024 × 600 — PDA 7&quot; horizontal</option>
+          <option value="pda-5-portrait" selected>480 × 800 — PDA 5&quot; portrait</option>
+          <option value="pda-5-landscape">800 × 480 — PDA 5&quot; landscape</option>
+          <option value="pda-7-portrait">600 × 1024 — PDA 7&quot; portrait</option>
+          <option value="pda-7-landscape">1024 × 600 — PDA 7&quot; landscape</option>
         </select>
       </div>
-      <button id="fullscreen-button" type="button">Ver en pantalla completa</button>
+      <button id="fullscreen-button" type="button">View fullscreen</button>
     </section>
 
-    <section id="workspace" aria-label="Vista previa de la pantalla PDA">
+    <section id="workspace" aria-label="PDA screen preview">
       <div id="canvas-shell">
-        <div id="pda-canvas" aria-label="Pantalla de Neptune">
+        <div id="pda-canvas" aria-label="Neptune screen">
           <div id="neptune-app"></div>
         </div>
       </div>
     </section>
     <p id="status-message" role="status" aria-live="polite"></p>
   </main>
-  <script src="js/script.js"></script>
+  <script type="module" src="js/script.js"></script>
   <script type="module" src="neptune/js/app.js"></script>
 </body>
 

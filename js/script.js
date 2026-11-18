@@ -1,11 +1,13 @@
+import { subscribeLanguage, t } from '../neptune/i18n/index.js';
+
 (() => {
   'use strict';
 
   const RESOLUTIONS = {
-    'pda-5-portrait': { width: 480, height: 800 },
-    'pda-5-landscape': { width: 800, height: 480 },
-    'pda-7-portrait': { width: 600, height: 1024 },
-    'pda-7-landscape': { width: 1024, height: 600 }
+    'pda-5-portrait': { width: 480, height: 800, labelKey: 'simulator.resolution.pda5Portrait' },
+    'pda-5-landscape': { width: 800, height: 480, labelKey: 'simulator.resolution.pda5Landscape' },
+    'pda-7-portrait': { width: 600, height: 1024, labelKey: 'simulator.resolution.pda7Portrait' },
+    'pda-7-landscape': { width: 1024, height: 600, labelKey: 'simulator.resolution.pda7Landscape' }
   };
 
   const workspace = document.getElementById('workspace');
@@ -16,9 +18,11 @@
   const resolutionSelect = document.getElementById('resolution-select');
 
   let selectedResolution = RESOLUTIONS['pda-5-portrait'];
+  let statusKey = '';
 
-  function setStatus(message = '') {
-    statusMessage.textContent = message;
+  function setStatus(messageKey = '') {
+    statusKey = messageKey;
+    statusMessage.textContent = messageKey ? t(messageKey) : '';
   }
 
   function isFullscreen() {
@@ -52,7 +56,7 @@
 
   async function enterFullscreen() {
     if (!document.documentElement.requestFullscreen) {
-      setStatus('La pantalla completa no está disponible en este navegador.');
+      setStatus('simulator.fullscreen.unavailable');
       return;
     }
 
@@ -60,38 +64,54 @@
       await document.documentElement.requestFullscreen();
       setStatus();
     } catch (error) {
-      setStatus('No fue posible activar la pantalla completa.');
+      setStatus('simulator.fullscreen.failed');
     }
   }
 
   async function exitFullscreen() {
     if (!document.fullscreenElement) return;
     if (!document.exitFullscreen) {
-      setStatus('No se puede salir de pantalla completa desde este navegador.');
+      setStatus('simulator.fullscreen.exitUnavailable');
       return;
     }
 
     try {
       await document.exitFullscreen();
     } catch (error) {
-      setStatus('No fue posible salir de la pantalla completa.');
+      setStatus('simulator.fullscreen.exitFailed');
     }
   }
 
+  function updateFullscreenButton() {
+    fullscreenButton.textContent = t(isFullscreen()
+      ? 'simulator.fullscreen.active'
+      : 'simulator.fullscreen.enter');
+  }
+
+  function updateSimulatorCopy() {
+    document.title = t('simulator.title');
+    document.getElementById('controls').setAttribute('aria-label', t('simulator.controls'));
+    document.querySelector('.resolution-picker label').textContent = t('simulator.resolutionOrientation');
+    Object.entries(RESOLUTIONS).forEach(([id, resolution]) => {
+      const option = resolutionSelect.querySelector(`option[value="${id}"]`);
+      if (option) option.textContent = t(resolution.labelKey);
+    });
+    workspace.setAttribute('aria-label', t('simulator.preview'));
+    canvas.setAttribute('aria-label', t('simulator.neptuneScreen'));
+    updateFullscreenButton();
+    if (statusKey) statusMessage.textContent = t(statusKey);
+  }
+
   window.exitFullscreen = exitFullscreen;
-
-  resolutionSelect.addEventListener('change', () => {
-    setResolution(resolutionSelect.value);
-  });
-
+  resolutionSelect.addEventListener('change', () => setResolution(resolutionSelect.value));
   fullscreenButton.addEventListener('click', enterFullscreen);
   window.addEventListener('resize', updateCanvasScale);
   document.addEventListener('fullscreenchange', () => {
-    fullscreenButton.textContent = isFullscreen()
-      ? 'Pantalla completa activa'
-      : 'Ver en pantalla completa';
+    updateFullscreenButton();
     updateCanvasScale();
   });
 
+  subscribeLanguage(updateSimulatorCopy);
+  updateSimulatorCopy();
   setResolution('pda-5-portrait');
 })();

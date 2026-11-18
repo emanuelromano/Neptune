@@ -1,11 +1,12 @@
 import { APPLICATIONS, FEATURED_APP } from '../../apps/registry.js';
 import { createNavigator } from '../../core/navigator.js';
+import { subscribeLanguage, t } from '../../i18n/index.js';
 import { createAppList } from '../components/item-list.js';
 
 export function createHomeScreen(root) {
   const screen = document.createElement('section');
   screen.className = 'neptune-screen neptune-home';
-  screen.setAttribute('aria-label', 'Inicio');
+  screen.setAttribute('aria-label', t('home.label'));
   const navigator = createNavigator(root);
   screen.append(createAppList({
     featuredApp: FEATURED_APP,
@@ -13,6 +14,8 @@ export function createHomeScreen(root) {
     navigator,
     root
   }));
+
+  subscribeLanguage(() => screen.setAttribute('aria-label', t('home.label')));
 
   return screen;
 }

@@ -4,6 +4,7 @@
  * apps concretas viven fuera de este componente para mantenerlo reutilizable.
  */
 import { createInlineIcon } from './icons.js';
+import { subscribeLanguage, t } from '../../i18n/index.js';
 
 const DRAG_THRESHOLD = 3;
 const MAX_OVERSCROLL = 60;
@@ -23,7 +24,7 @@ const RIPPLE_DIAMETER_MULTIPLIER = 0.7425;
 export function createAppList({ featuredApp, apps, navigator, root }) {
   const viewport = document.createElement('div');
   viewport.className = 'neptune-list-viewport';
-  viewport.setAttribute('aria-label', 'Lista de aplicaciones');
+  viewport.setAttribute('aria-label', t('apps.list'));
   viewport.setAttribute('role', 'region');
   viewport.tabIndex = 0;
 
@@ -41,9 +42,15 @@ export function createAppList({ featuredApp, apps, navigator, root }) {
     module.mount(featuredHost, { root, app: featuredApp });
   });
 
-  apps.forEach((app) => content.append(createAppCard(app, viewport, navigator)));
+  const appCards = apps.map((app) => createAppCard(app, viewport, navigator));
+  appCards.forEach(({ card }) => content.append(card));
   viewport.append(content);
   enableDragScroll(viewport, content, navigator, apps);
+  // Actualiza los títulos ya montados cuando Configuración cambia el idioma.
+  subscribeLanguage(() => {
+    viewport.setAttribute('aria-label', t('apps.list'));
+    appCards.forEach(({ updateLanguage }) => updateLanguage());
+  });
   return viewport;
 }
 
@@ -53,13 +60,19 @@ function createAppCard(app, viewport, navigator) {
   card.dataset.appId = app.id;
   card.setAttribute('role', 'button');
   card.tabIndex = 0;
-  card.setAttribute('aria-label', `Abrir ${app.title}`);
   card.append(createInlineIcon(app.icon, 'neptune-item-icon'));
 
   const label = document.createElement('span');
   label.className = 'neptune-item-label';
-  label.textContent = app.title;
   card.append(label);
+
+  function updateLanguage() {
+    const title = t(app.titleKey);
+    label.textContent = title;
+    card.setAttribute('aria-label', t('apps.open', { app: title }));
+  }
+
+  updateLanguage();
 
   card.addEventListener('click', (event) => {
     const tapLockUntil = Number(viewport.dataset.neptuneTapLockUntil ?? 0);
@@ -73,7 +86,7 @@ function createAppCard(app, viewport, navigator) {
       navigator.open(app, card, viewport);
     }
   });
-  return card;
+  return { card, updateLanguage };
 }
 
 function enableDragScroll(viewport, content, navigator, apps) {

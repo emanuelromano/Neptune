@@ -2,7 +2,7 @@
 export const WATCHFACES = Object.freeze([
   {
     id: 'clock_1',
-    name: 'Analógico',
+    nameKey: 'watchface.analog',
     load: () => import('./clock_1.js')
   }
 ]);

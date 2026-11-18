@@ -5,7 +5,7 @@
  */
 export const FEATURED_APP = Object.freeze({
   id: 'clock',
-  title: 'Reloj',
+  titleKey: 'app.clock',
   layout: 'square',
   load: () => import('./clock/app.js')
 });
@@ -13,25 +13,25 @@ export const FEATURED_APP = Object.freeze({
 export const APPLICATIONS = Object.freeze([
   {
     id: 'calendar',
-    title: 'Calendario',
+    titleKey: 'app.calendar',
     icon: 'calendar',
     load: () => import('./calendar/app.js')
   },
   {
     id: 'notes',
-    title: 'Notas',
+    titleKey: 'app.notes',
     icon: 'notes',
     load: () => import('./notes/app.js')
   },
   {
     id: 'contacts',
-    title: 'Contactos',
+    titleKey: 'app.contacts',
     icon: 'contacts',
     load: () => import('./contacts/app.js')
   },
   {
     id: 'settings',
-    title: 'Configuración',
+    titleKey: 'app.settings',
     icon: 'settings',
     load: () => import('./settings/app.js')
   }

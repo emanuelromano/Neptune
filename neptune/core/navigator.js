@@ -4,6 +4,7 @@
  * y se encoge de vuelta sin que cada módulo tenga que implementar navegación.
  */
 import { createInlineIcon } from '../js/components/icons.js';
+import { subscribeLanguage, t } from '../i18n/index.js';
 
 // Alcance final del ripple: 45 % menor que la versión anterior (1.35).
 const RIPPLE_DIAMETER_MULTIPLIER = 0.7425;
@@ -50,6 +51,7 @@ export function createNavigator(root) {
       expandedCard,
       appHost,
       unmount: () => {},
+      unsubscribeLanguage: () => {},
       closing: false,
       loadVersion: 0
     };
@@ -60,6 +62,14 @@ export function createNavigator(root) {
 
     const backButton = createBackButton(() => close(session));
     expandedCard.append(backButton);
+    const expandedLabel = expandedCard.querySelector('.neptune-item-label');
+    const updateExpandedCopy = () => {
+      const title = t(app.titleKey);
+      if (expandedLabel) expandedLabel.textContent = title;
+      backButton.setAttribute('aria-label', t('navigation.backToApps'));
+    };
+    updateExpandedCopy();
+    session.unsubscribeLanguage = subscribeLanguage(updateExpandedCopy);
     layer.append(expandedCard);
     screen.append(layer);
 
@@ -92,6 +102,7 @@ export function createNavigator(root) {
     session.closing = true;
     session.loadVersion += 1;
     session.unmount();
+    session.unsubscribeLanguage();
     session.expandedCard.classList.remove('neptune-app-expansion-card--expanded');
     session.content.classList.remove('neptune-list-content--expanding');
 
@@ -130,7 +141,7 @@ function createBackButton(onBack) {
   const button = document.createElement('button');
   button.className = 'neptune-app-back-button';
   button.type = 'button';
-  button.setAttribute('aria-label', 'Volver a la lista de aplicaciones');
+  button.setAttribute('aria-label', t('navigation.backToApps'));
   button.append(createInlineIcon('arrow-back', 'neptune-app-back-icon'));
   button.addEventListener('click', onBack);
   return button;
