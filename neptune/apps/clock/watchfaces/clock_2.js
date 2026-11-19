@@ -17,6 +17,8 @@ const CLOCK_CONFIG = Object.freeze({
   secondHandLength: 145,
   secondHandThickness: 2,
   centerDotDiameter: 16,
+  // Disco de hora/minuto: 4 px más de radio que el punto central.
+  handHubRadiusExtra: 4,
   digitalTimeFontSize: 24,
   digitalTimeWidth: 110,
   digitalTimeTop: 20,
@@ -56,10 +58,12 @@ export function mount(container) {
 
   const hourHand = createHand('hour');
   const minuteHand = createHand('minute');
+  const handHub = document.createElement('span');
+  handHub.className = 'neptune-clock-hand-hub';
   const secondHand = createHand('second');
   const centerDot = document.createElement('span');
   centerDot.className = 'neptune-clock-center-dot';
-  face.append(hourHand, minuteHand, secondHand, centerDot);
+  face.append(hourHand, minuteHand, handHub, secondHand, centerDot);
   clock.append(face, digitalTime);
   container.append(clock);
 
@@ -115,6 +119,7 @@ function applyConfiguration(clock) {
     '--clock-second-hand-length': `${CLOCK_CONFIG.secondHandLength}px`,
     '--clock-second-hand-thickness': `${CLOCK_CONFIG.secondHandThickness}px`,
     '--clock-center-dot-diameter': `${CLOCK_CONFIG.centerDotDiameter}px`,
+    '--clock-hand-hub-diameter': `${CLOCK_CONFIG.centerDotDiameter + CLOCK_CONFIG.handHubRadiusExtra * 2}px`,
     '--clock-digital-font-size': `${CLOCK_CONFIG.digitalTimeFontSize}px`,
     '--clock-digital-width': `${CLOCK_CONFIG.digitalTimeWidth}px`,
     '--clock-digital-top': `${CLOCK_CONFIG.digitalTimeTop}px`,
@@ -131,6 +136,7 @@ function applyTheme(clock, preferences) {
   clock.style.setProperty('--clock-tick-color', colors.tick);
   clock.style.setProperty('--clock-hour-hand-color', accentColor);
   clock.style.setProperty('--clock-minute-hand-color', accentColor);
+  clock.style.setProperty('--clock-hand-hub-color', accentColor);
   // Segundos adopta el color neutro de la hora digital en cada tema.
   clock.style.setProperty('--clock-second-hand-color', colors.digital);
   // El punto central acompaña a la aguja de segundos, no al color de acento.

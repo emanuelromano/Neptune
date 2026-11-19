@@ -328,6 +328,19 @@
   --clock-hand-color: var(--clock-second-hand-color);
 }
 
+/* Disco de plástico de las agujas principales; el orden DOM lo deja bajo segundos y punto central. */
+.neptune-clock-hand-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--clock-hand-hub-diameter);
+  aspect-ratio: 1;
+  background: var(--clock-hand-hub-color);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: background-color var(--neptune-accent-transition);
+}
+
 .neptune-clock-center-dot {
   position: absolute;
   top: 50%;
@@ -854,6 +867,7 @@
   .neptune-app-expansion-card,
   .neptune-app-back-button,
   .neptune-item-icon,
+  .neptune-clock-hand-hub,
   .neptune-settings-dropdown-chevron,
   .neptune-settings-panel,
   .neptune-settings-theme-switch,
