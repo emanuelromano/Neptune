@@ -45,6 +45,7 @@ export function createNavigator(root) {
     const session = {
       app,
       card,
+      viewport,
       content,
       screen,
       layer,
@@ -101,9 +102,13 @@ export function createNavigator(root) {
     if (activeSession !== session || session.closing) return;
     session.closing = true;
     session.loadVersion += 1;
+    // Fija el destino de la animación: la lista no cambia de posición al cerrarse.
+    session.viewport.dataset.neptuneScrollLocked = 'true';
+    session.viewport.dispatchEvent(new Event('neptune-scroll-lock'));
     session.unmount();
     session.unsubscribeLanguage();
     session.expandedCard.classList.remove('neptune-app-expansion-card--expanded');
+    session.content.classList.add('neptune-list-content--closing');
     session.content.classList.remove('neptune-list-content--expanding');
 
     let completed = false;
@@ -111,7 +116,9 @@ export function createNavigator(root) {
       if (completed) return;
       completed = true;
       session.card.style.visibility = '';
+      session.content.classList.remove('neptune-list-content--closing');
       session.layer.remove();
+      delete session.viewport.dataset.neptuneScrollLocked;
       delete session.screen.dataset.activeApp;
       activeSession = null;
     };

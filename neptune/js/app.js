@@ -3,6 +3,7 @@ import { createHomeScreen } from './screens/home.js';
 import { createNeptuneState } from './state.js';
 import { applyThemeTokens, mountThemeController } from '../core/theme-controller.js';
 import { mountI18nController } from '../i18n/index.js';
+import { mountWallpaperController } from '../core/wallpaper-controller.js';
 
 const mountPoint = document.getElementById('neptune-app');
 
@@ -15,7 +16,9 @@ if (mountPoint) {
   const appShell = createAppShell(state);
 
   if (state.screen === 'home') {
-    appShell.append(createHomeScreen(mountPoint));
+    const screen = createHomeScreen(mountPoint);
+    appShell.append(screen);
+    mountWallpaperController(mountPoint, screen, state.preferences);
   }
 
   mountPoint.replaceChildren(appShell);

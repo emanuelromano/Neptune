@@ -12,6 +12,8 @@ const DEFAULT_PREFERENCES = Object.freeze({
   selectedWatchface: 'clock_1',
   // Idioma de la interfaz; inglés es el valor inicial para instalaciones nuevas.
   language: 'en',
+  // Fondo independiente del modo claro/oscuro; el primero es el predeterminado.
+  wallpaper: 'background_1',
   // Color compartido por los componentes que adopten el acento del sistema.
   accentColor: '#ff3b30'
 });

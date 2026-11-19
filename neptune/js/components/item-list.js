@@ -168,6 +168,16 @@ function enableDragScroll(viewport, content, navigator, apps) {
     momentumFrame = null;
   }
 
+  // El navegador bloquea todos los métodos de scroll durante el cierre.
+  viewport.addEventListener('neptune-scroll-lock', () => {
+    stopMomentum();
+    if (activePointerId !== null && viewport.hasPointerCapture(activePointerId)) {
+      viewport.releasePointerCapture(activePointerId);
+    }
+    activePointerId = null;
+    viewport.classList.remove('neptune-list-viewport--dragging');
+  });
+
   function startMomentum() {
     velocity *= MOMENTUM_BOOST;
     let previousTime = performance.now();
@@ -222,6 +232,7 @@ function enableDragScroll(viewport, content, navigator, apps) {
   }
 
   viewport.addEventListener('pointerdown', (event) => {
+    if (viewport.dataset.neptuneScrollLocked === 'true') return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     stopMomentum();
     clearPendingSettle();
@@ -255,8 +266,9 @@ function enableDragScroll(viewport, content, navigator, apps) {
   viewport.addEventListener('pointerup', finishDrag);
   viewport.addEventListener('pointercancel', finishDrag);
   viewport.addEventListener('wheel', (event) => {
-    stopMomentum();
     event.preventDefault();
+    if (viewport.dataset.neptuneScrollLocked === 'true') return;
+    stopMomentum();
     refreshMaxScrollTop();
     scrollToPosition(viewport.scrollTop + event.deltaY);
     settleOverscroll();
@@ -264,6 +276,7 @@ function enableDragScroll(viewport, content, navigator, apps) {
   viewport.addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
+    if (viewport.dataset.neptuneScrollLocked === 'true') return;
     refreshMaxScrollTop();
     scrollToPosition(viewport.scrollTop + (event.key === 'ArrowDown' ? KEYBOARD_SCROLL_STEP : -KEYBOARD_SCROLL_STEP));
     settleOverscroll();

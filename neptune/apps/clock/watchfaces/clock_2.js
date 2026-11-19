@@ -22,7 +22,7 @@ const CLOCK_CONFIG = Object.freeze({
   digitalTimeRight: 20,
   // NÚMEROS: distancia al centro y tamaño de la fuente serif.
   numberRadius: 143,
-  numberFontSize: 24,
+  numberFontSize: 32,
   // MINUTOS: diámetro de los 60 puntos y distancia desde el borde exterior.
   minutePointSize: 3,
   minutePointInset: 7

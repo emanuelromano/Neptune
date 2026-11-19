@@ -11,6 +11,8 @@ import {
 import { t } from '../../i18n/index.js';
 import { AVAILABLE_LANGUAGES } from '../../i18n/registry.js';
 import { WATCHFACES } from '../clock/watchfaces/registry.js';
+import { WALLPAPERS } from '../../core/wallpapers.js';
+import { createInlineIcon } from '../../js/components/icons.js';
 
 // PALETA DE ACENTO: añade o cambia opciones aquí sin alterar la lógica del selector.
 const ACCENT_COLORS = [
@@ -29,18 +31,19 @@ export function mount(container) {
 
   const accentRow = createAccentRow();
   const themeRow = createThemeRow();
+  const wallpaperRow = createWallpaperRow();
   const watchfaceRow = createWatchfaceRow();
   const fontScaleRow = createFontScaleRow();
   const languageRow = createLanguageRow();
-  const rows = [accentRow, themeRow, watchfaceRow, fontScaleRow, languageRow];
+  const rows = [accentRow, themeRow, wallpaperRow, watchfaceRow, fontScaleRow, languageRow];
   panel.append(...rows.map(({ row }) => row));
   container.append(panel);
 
   updateSettingsCopy(panel, rows);
-  syncControls(getPreferences(), accentRow.buttons, themeRow.input, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
+  syncControls(getPreferences(), accentRow.buttons, themeRow.input, wallpaperRow.buttons, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
   const unsubscribe = subscribePreferences((preferences) => {
     updateSettingsCopy(panel, rows);
-    syncControls(preferences, accentRow.buttons, themeRow.input, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
+    syncControls(preferences, accentRow.buttons, themeRow.input, wallpaperRow.buttons, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
   });
 
   return () => {
@@ -124,6 +127,57 @@ function createThemeRow() {
     updateLanguage() {
       label.textContent = t('settings.darkMode');
       input.setAttribute('aria-label', t('settings.activateDarkMode'));
+    }
+  };
+}
+
+function createWallpaperRow() {
+  const row = document.createElement('section');
+  row.className = 'neptune-settings-wallpaper-row';
+  row.setAttribute('aria-label', t('settings.wallpaper'));
+
+  const label = document.createElement('span');
+  label.className = 'neptune-settings-theme-label';
+  label.textContent = t('settings.wallpaper');
+
+  const grid = document.createElement('div');
+  grid.className = 'neptune-settings-wallpaper-grid';
+  grid.setAttribute('role', 'radiogroup');
+  grid.setAttribute('aria-label', t('settings.selectWallpaper'));
+
+  const buttons = WALLPAPERS.map((wallpaper, index) => {
+    const button = document.createElement('button');
+    button.className = 'neptune-settings-wallpaper-option';
+    button.type = 'button';
+    button.value = wallpaper.id;
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-label', t('settings.wallpaperOption', { number: index + 1 }));
+    button.setAttribute('aria-checked', 'false');
+
+    const thumbnail = document.createElement('img');
+    thumbnail.className = 'neptune-settings-wallpaper-thumb';
+    thumbnail.src = wallpaper.thumbnail;
+    thumbnail.alt = '';
+    thumbnail.width = 80;
+    thumbnail.height = 80;
+    thumbnail.draggable = false;
+    button.append(thumbnail);
+    button.addEventListener('click', () => updatePreferences({ wallpaper: wallpaper.id }));
+    grid.append(button);
+    return button;
+  });
+
+  row.append(label, grid);
+  return {
+    row,
+    buttons,
+    updateLanguage() {
+      row.setAttribute('aria-label', t('settings.wallpaper'));
+      label.textContent = t('settings.wallpaper');
+      grid.setAttribute('aria-label', t('settings.selectWallpaper'));
+      buttons.forEach((button, index) => {
+        button.setAttribute('aria-label', t('settings.wallpaperOption', { number: index + 1 }));
+      });
     }
   };
 }
@@ -224,7 +278,9 @@ function createSettingsDropdown({ ariaLabelKey, options, onChange }) {
 
   const triggerText = document.createElement('span');
   triggerText.className = 'neptune-settings-dropdown-value';
-  trigger.append(triggerText);
+  // SVG inline basado en arrow_drop_down.svg; comparte el acento global.
+  const chevron = createInlineIcon('arrow-drop-down', 'neptune-settings-dropdown-chevron');
+  trigger.append(triggerText, chevron);
 
   const menu = document.createElement('div');
   menu.className = 'neptune-settings-dropdown-options';
@@ -252,7 +308,31 @@ function createSettingsDropdown({ ariaLabelKey, options, onChange }) {
     trigger.setAttribute('aria-expanded', 'false');
   }
 
+  function positionMenu() {
+    const card = element.closest('.neptune-app-expansion-card');
+    const screen = element.closest('.neptune-screen');
+    const triggerRect = trigger.getBoundingClientRect();
+    const cardRect = card?.getBoundingClientRect();
+    const screenRect = screen?.getBoundingClientRect();
+    const scale = triggerRect.height / trigger.offsetHeight || 1;
+    const gap = 6 * scale;
+    const upperEdge = Math.max(0, cardRect?.top ?? 0, screenRect?.top ?? 0);
+    const lowerEdge = Math.min(window.innerHeight, cardRect?.bottom ?? window.innerHeight, screenRect?.bottom ?? window.innerHeight);
+
+    // Mide el menú completo antes de limitarlo por el espacio disponible.
+    menu.style.maxHeight = '';
+    const desiredHeight = menu.scrollHeight * scale + gap;
+    const spaceBelow = Math.max(0, lowerEdge - triggerRect.bottom);
+    const spaceAbove = Math.max(0, triggerRect.top - upperEdge);
+    const openAbove = desiredHeight > spaceBelow && spaceAbove > spaceBelow;
+    const available = openAbove ? spaceAbove : spaceBelow;
+
+    element.classList.toggle('neptune-settings-dropdown--above', openAbove);
+    menu.style.maxHeight = `${Math.max(0, (available - gap) / scale)}px`;
+  }
+
   trigger.addEventListener('click', () => {
+    if (!element.classList.contains('neptune-settings-dropdown--open')) positionMenu();
     const isOpen = element.classList.toggle('neptune-settings-dropdown--open');
     trigger.setAttribute('aria-expanded', String(isOpen));
   });
@@ -300,13 +380,18 @@ function updateSettingsCopy(panel, rows) {
   rows.forEach((row) => row.updateLanguage());
 }
 
-function syncControls(preferences, accentButtons, themeInput, watchfaceDropdown, fontScaleDropdown, languageDropdown) {
+function syncControls(preferences, accentButtons, themeInput, wallpaperButtons, watchfaceDropdown, fontScaleDropdown, languageDropdown) {
   accentButtons.forEach((button) => {
     const selected = button.value === preferences.accentColor;
     button.classList.toggle('neptune-settings-accent-option--selected', selected);
     button.setAttribute('aria-checked', String(selected));
   });
   themeInput.checked = preferences.theme === 'dark';
+  wallpaperButtons.forEach((button) => {
+    const selected = button.value === preferences.wallpaper;
+    button.classList.toggle('neptune-settings-wallpaper-option--selected', selected);
+    button.setAttribute('aria-checked', String(selected));
+  });
   watchfaceDropdown.setValue(preferences.selectedWatchface);
   fontScaleDropdown.setValue(preferences.fontScale);
   languageDropdown.setValue(preferences.language);

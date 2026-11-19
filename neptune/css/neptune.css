@@ -3,15 +3,6 @@
  * Los estilos del simulador permanecen en styles.css.
  */
 
-/* DM Serif Display (SIL Open Font License 1.1), servida localmente para Analog 2. */
-@font-face {
-  font-family: 'DM Serif Display';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('../assets/fonts/DMSerifDisplay-Regular.ttf') format('truetype');
-}
-
 #pda-canvas {
   overflow: hidden;
 }
@@ -80,7 +71,7 @@
   /* Margen del icono respecto de los bordes izquierdo y derecho de la tarjeta. */
   --neptune-item-horizontal-padding: 20px;
 
-  /* FONDO DE PANTALLA: reemplaza la ruta para seleccionar otro wallpaper. */
+  /* FONDO DE PANTALLA: el controlador lo actualiza independientemente del tema. */
   --neptune-wallpaper-image: url('../assets/backgrounds/background_1.png');
   --neptune-wallpaper-position: center;
   --neptune-wallpaper-size: cover;
@@ -93,12 +84,11 @@
   transition: opacity 150ms ease;
 }
 
-/* TEMA OSCURO: sustituye wallpaper, superficies, textos e iconos. */
+/* TEMA OSCURO: sustituye superficies y textos; conserva el wallpaper elegido. */
 #neptune-app[data-theme='dark'] {
   --neptune-text-color: #ffffff;
   --neptune-screen-color: #161616;
   --neptune-glass-color: #303030;
-  --neptune-wallpaper-image: url('../assets/backgrounds/background_2.png');
   --neptune-app-back-button-color: #3c3c3c;
   --neptune-app-back-button-active-color: #525252;
   --neptune-settings-row-color: #3a3a3a;
@@ -132,7 +122,26 @@
   background-size: var(--neptune-wallpaper-size);
 }
 
+/* Imagen anterior sobre la nueva: desaparece gradualmente al elegir otro fondo. */
+.neptune-wallpaper-outgoing {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-position: var(--neptune-wallpaper-position);
+  background-repeat: no-repeat;
+  background-size: var(--neptune-wallpaper-size);
+  opacity: 1;
+  transition: opacity 400ms ease;
+}
+
+.neptune-wallpaper-outgoing--fading {
+  opacity: 0;
+}
+
 .neptune-list-viewport {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -171,6 +180,11 @@
 
 .neptune-list-content--expanding > * {
   opacity: 0;
+}
+
+/* Al cerrar, el fondo reaparece de forma constante durante toda la reducción. */
+.neptune-list-content--closing > * {
+  transition: opacity var(--neptune-app-expand-duration) linear;
 }
 
 /* CUADRADO DESTACADO: bloque de 440 × 440 px antes de "Item 1". */
@@ -243,14 +257,14 @@
   transform: translateX(-50%);
 }
 
-/* WATCHFACE ANALOG 2: números serif y puntos exteriores para los 60 minutos. */
+/* WATCHFACE ANALOG 2: números sans serif y puntos exteriores para los 60 minutos. */
 .neptune-clock-number {
   position: absolute;
   top: 50%;
   left: 50%;
   color: var(--clock-number-color);
-  /* Fuente serif incluida localmente: no depende de la instalación del sistema. */
-  font-family: 'DM Serif Display', serif;
+  /* Hereda la familia sans serif del resto de la interfaz. */
+  font-family: inherit;
   font-size: var(--clock-number-font-size);
   font-weight: 400;
   line-height: 1;
@@ -587,6 +601,58 @@
   outline-offset: 2px;
 }
 
+/* TARJETA FONDO: misma alineación y padding vertical que Color de acento. */
+.neptune-settings-wallpaper-row {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  margin-top: 12px;
+  font-size: calc(18px * var(--neptune-font-scale));
+  color: var(--neptune-text-color);
+  background: var(--neptune-settings-row-color);
+  border-radius: var(--neptune-card-radius);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%);
+}
+
+.neptune-settings-wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 8px;
+  margin-top: 15px;
+}
+
+.neptune-settings-wallpaper-option {
+  display: grid;
+  width: min(80px, 100%);
+  aspect-ratio: 1;
+  padding: 0;
+  place-self: center;
+  appearance: none;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+}
+
+.neptune-settings-wallpaper-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Mismo aro gris del acento: 3 px de grosor y 3 px de separación. */
+.neptune-settings-wallpaper-option--selected .neptune-settings-wallpaper-thumb {
+  outline: 3px solid var(--neptune-settings-accent-selection-color);
+  outline-offset: 3px;
+}
+
+.neptune-settings-wallpaper-option:focus-visible {
+  outline: 3px solid var(--neptune-accent-color);
+  outline-offset: 5px;
+}
+
 .neptune-settings-watchface-row {
   display: flex;
   align-items: center;
@@ -624,12 +690,14 @@
   cursor: pointer;
 }
 
-.neptune-settings-watchface-select::after {
+.neptune-settings-dropdown-chevron {
   flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
   margin-left: 8px;
-  content: '⌄';
-  font-size: 1.1em;
-  line-height: 1;
+  color: var(--neptune-accent-color);
+  align-self: center;
+  transition: color var(--neptune-accent-transition);
 }
 
 /* Contenedor del desplegable propio: permite colorear la selección en cualquier navegador. */
@@ -650,8 +718,12 @@
   right: 0;
   left: 0;
   display: grid;
+  grid-auto-rows: min-content;
   gap: 2px;
   padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -661,6 +733,13 @@
   box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
   transform: translateY(-4px);
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+}
+
+/* Si no cabe abajo, ancla el menú por encima del control. */
+.neptune-settings-dropdown--above .neptune-settings-dropdown-options {
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform: translateY(4px);
 }
 
 .neptune-settings-dropdown--open .neptune-settings-dropdown-options {
@@ -765,9 +844,12 @@
   }
 
   .neptune-list-content > *,
+  .neptune-list-content--closing > *,
+  .neptune-wallpaper-outgoing,
   .neptune-app-expansion-card,
   .neptune-app-back-button,
   .neptune-item-icon,
+  .neptune-settings-dropdown-chevron,
   .neptune-settings-panel,
   .neptune-settings-theme-switch,
   .neptune-settings-theme-switch::after,
