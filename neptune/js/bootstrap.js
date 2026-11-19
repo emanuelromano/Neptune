@@ -16,7 +16,7 @@ const errorMessage = boot.querySelector('.neptune-boot-error-message');
 const retryButton = boot.querySelector('.neptune-boot-retry');
 const controls = document.getElementById('controls');
 
-const ICON_NAMES = ['calendar', 'notes', 'contacts', 'settings', 'arrow_back', 'arrow_drop_down', 'error'];
+const ICON_NAMES = ['calendar', 'messages', 'notes', 'contacts', 'settings', 'arrow_back', 'arrow_drop_down', 'error'];
 const imageUrls = [
   ...WALLPAPERS.flatMap(({ image, thumbnail }) => [image, thumbnail]),
   ...ICON_NAMES.map((name) => new URL(`../assets/icons/${name}.svg`, import.meta.url).href)

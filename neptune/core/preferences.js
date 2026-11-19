@@ -10,6 +10,7 @@ const DEFAULT_PREFERENCES = Object.freeze({
   fontScale: 1,
   reduceMotion: false,
   selectedWatchface: 'clock_1',
+  watchfaceIdVersion: 2,
   // Idioma de la interfaz; inglés es el valor inicial para instalaciones nuevas.
   language: 'en',
   // Fondo independiente del modo claro/oscuro; el primero es el predeterminado.
@@ -41,7 +42,16 @@ export function subscribePreferences(subscriber) {
 function readPreferences() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved) return { ...DEFAULT_PREFERENCES, ...saved };
+    if (saved) {
+      // Una sola vez: intercambia IDs anteriores para conservar la apariencia elegida.
+      if (saved.watchfaceIdVersion !== 2) {
+        if (saved.selectedWatchface === 'clock_1') saved.selectedWatchface = 'clock_2';
+        else if (saved.selectedWatchface === 'clock_2') saved.selectedWatchface = 'clock_1';
+        saved.watchfaceIdVersion = 2;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch { /* Sin persistencia, la sesión sigue. */ }
+      }
+      return { ...DEFAULT_PREFERENCES, ...saved };
+    }
 
     // Conserva el tema elegido por la versión anterior de Neptune, si existe.
     const legacyTheme = localStorage.getItem('neptune-theme');

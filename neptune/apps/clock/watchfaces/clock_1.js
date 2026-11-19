@@ -1,15 +1,13 @@
 /*
- * WATCHFACE 1 — Analógica clásica
- * Las dimensiones se ajustan aquí; los colores reaccionan al tema y al acento.
+ * WATCHFACE 1 — Analógica con números
+ * Muestra doce números sans serif y 60 puntos periféricos para los minutos.
  */
 import { getPreferences, subscribePreferences } from '../../../core/preferences.js';
 import { subscribeLanguage, t } from '../../../i18n/index.js';
 
 const CLOCK_CONFIG = Object.freeze({
   diameter: 360,
-  tickLength: 14,
-  tickThickness: 5,
-  tickInset: 8,
+  // AGUJAS: mismos tamaños que la watchface Analog 2.
   hourHandLength: 85,
   hourHandThickness: 8,
   minuteHandLength: 140,
@@ -20,23 +18,23 @@ const CLOCK_CONFIG = Object.freeze({
   digitalTimeFontSize: 24,
   digitalTimeWidth: 110,
   digitalTimeTop: 20,
-  digitalTimeRight: 20
+  digitalTimeRight: 20,
+  // NÚMEROS: distancia al centro y tamaño de la fuente sans serif.
+  numberRadius: 143,
+  numberFontSize: 32,
+  // MINUTOS: diámetro de los 60 puntos y distancia desde el borde exterior.
+  minutePointSize: 3,
+  minutePointInset: 7
 });
 
 const THEME_COLORS = Object.freeze({
-  light: {
-    tick: '#3f3f3f',
-    digital: '#000000'
-  },
-  dark: {
-    tick: '#c9c9c9',
-    digital: '#ffffff'
-  }
+  light: { neutral: '#000000' },
+  dark: { neutral: '#ffffff' }
 });
 
 export function mount(container) {
   const clock = document.createElement('div');
-  clock.className = 'neptune-clock';
+  clock.className = 'neptune-clock neptune-clock--analog-1';
   clock.setAttribute('role', 'group');
   clock.setAttribute('aria-label', t('clock.analog1Label'));
   applyConfiguration(clock);
@@ -47,11 +45,24 @@ export function mount(container) {
   digitalTime.className = 'neptune-clock-digital';
   digitalTime.setAttribute('aria-label', t('clock.digitalLabel'));
 
-  for (let hour = 0; hour < 12; hour += 1) {
-    const tick = document.createElement('span');
-    tick.className = 'neptune-clock-tick';
-    tick.style.setProperty('--clock-tick-angle', `${hour * 30}deg`);
-    face.append(tick);
+  // Los 60 puntos se sitúan por fuera del círculo formado por los números.
+  for (let minute = 0; minute < 60; minute += 1) {
+    const point = document.createElement('span');
+    point.className = 'neptune-clock-minute-point';
+    point.style.setProperty('--clock-minute-point-angle', `${minute * 6}deg`);
+    face.append(point);
+  }
+
+  // 12 arriba, 3 a la derecha, 6 abajo y 9 a la izquierda.
+  for (let number = 1; number <= 12; number += 1) {
+    const label = document.createElement('span');
+    label.className = 'neptune-clock-number';
+    label.textContent = String(number);
+    const angle = (number % 12) * 30;
+    label.style.setProperty('--clock-number-angle', `${angle}deg`);
+    // Mantiene el número recto sin depender de multiplicación CSS experimental.
+    label.style.setProperty('--clock-number-counter-angle', `${-angle}deg`);
+    face.append(label);
   }
 
   const hourHand = createHand('hour');
@@ -78,7 +89,7 @@ export function mount(container) {
   applyTheme(clock, getPreferences());
   updateClock();
   const interval = window.setInterval(updateClock, 1000);
-  const unsubscribe = subscribePreferences((next, previous) => {
+  const unsubscribePreferences = subscribePreferences((next, previous) => {
     if (next.theme !== previous.theme || next.accentColor !== previous.accentColor) {
       applyTheme(clock, next);
     }
@@ -90,7 +101,7 @@ export function mount(container) {
 
   return () => {
     window.clearInterval(interval);
-    unsubscribe();
+    unsubscribePreferences();
     unsubscribeLanguage();
     clock.remove();
   };
@@ -105,9 +116,6 @@ function createHand(type) {
 function applyConfiguration(clock) {
   const values = {
     '--clock-diameter': `${CLOCK_CONFIG.diameter}px`,
-    '--clock-tick-length': `${CLOCK_CONFIG.tickLength}px`,
-    '--clock-tick-thickness': `${CLOCK_CONFIG.tickThickness}px`,
-    '--clock-tick-inset': `${CLOCK_CONFIG.tickInset}px`,
     '--clock-hour-hand-length': `${CLOCK_CONFIG.hourHandLength}px`,
     '--clock-hour-hand-thickness': `${CLOCK_CONFIG.hourHandThickness}px`,
     '--clock-minute-hand-length': `${CLOCK_CONFIG.minuteHandLength}px`,
@@ -118,7 +126,11 @@ function applyConfiguration(clock) {
     '--clock-digital-font-size': `${CLOCK_CONFIG.digitalTimeFontSize}px`,
     '--clock-digital-width': `${CLOCK_CONFIG.digitalTimeWidth}px`,
     '--clock-digital-top': `${CLOCK_CONFIG.digitalTimeTop}px`,
-    '--clock-digital-right': `${CLOCK_CONFIG.digitalTimeRight}px`
+    '--clock-digital-right': `${CLOCK_CONFIG.digitalTimeRight}px`,
+    '--clock-number-offset': `-${CLOCK_CONFIG.numberRadius}px`,
+    '--clock-number-font-size': `${CLOCK_CONFIG.numberFontSize}px`,
+    '--clock-minute-point-size': `${CLOCK_CONFIG.minutePointSize}px`,
+    '--clock-minute-point-inset': `${CLOCK_CONFIG.minutePointInset}px`
   };
 
   Object.entries(values).forEach(([name, value]) => clock.style.setProperty(name, value));
@@ -126,15 +138,14 @@ function applyConfiguration(clock) {
 
 function applyTheme(clock, preferences) {
   const colors = THEME_COLORS[preferences.theme] ?? THEME_COLORS.light;
-  // Las agujas principales toman el acento seleccionado desde Configuración.
   const accentColor = preferences.accentColor ?? '#ff3b30';
-  clock.style.setProperty('--clock-tick-color', colors.tick);
+  // Hora, minutos y hora digital conservan el color de acento del sistema.
   clock.style.setProperty('--clock-hour-hand-color', accentColor);
   clock.style.setProperty('--clock-minute-hand-color', accentColor);
-  // Segundos adopta el color neutro de la hora digital en cada tema.
-  clock.style.setProperty('--clock-second-hand-color', colors.digital);
-  // El punto central acompaña a la aguja de segundos, no al color de acento.
-  clock.style.setProperty('--clock-center-dot-color', colors.digital);
-  // La hora digital forma parte de los elementos destacados por el acento.
   clock.style.setProperty('--clock-digital-color', accentColor);
+  // Segundos, punto central, números y puntos de minuto comparten el neutro del tema.
+  clock.style.setProperty('--clock-second-hand-color', colors.neutral);
+  clock.style.setProperty('--clock-center-dot-color', colors.neutral);
+  clock.style.setProperty('--clock-number-color', colors.neutral);
+  clock.style.setProperty('--clock-minute-point-color', colors.neutral);
 }

@@ -24,6 +24,12 @@ export const APPLICATIONS = Object.freeze([
     load: () => import('./notes/app.js')
   },
   {
+    id: 'messages',
+    titleKey: 'app.messages',
+    icon: 'messages',
+    load: () => import('./messages/app.js')
+  },
+  {
     id: 'contacts',
     titleKey: 'app.contacts',
     icon: 'contacts',

@@ -262,7 +262,7 @@
   transform: translateX(-50%);
 }
 
-/* WATCHFACE ANALOG 2: números sans serif y puntos exteriores para los 60 minutos. */
+/* WATCHFACE ANALOG 1: números sans serif y puntos exteriores para los 60 minutos. */
 .neptune-clock-number {
   position: absolute;
   top: 50%;

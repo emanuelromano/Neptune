@@ -24,6 +24,7 @@ export default Object.freeze({
   'apps.open': 'Open {app}',
   'app.clock': 'Clock',
   'app.calendar': 'Calendar',
+  'app.messages': 'Messages',
   'app.notes': 'Notes',
   'app.contacts': 'Contacts',
   'app.settings': 'Settings',
