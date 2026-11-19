@@ -59,6 +59,15 @@ async function start() {
   errorCard.classList.remove('neptune-boot-error--visible');
   progress.style.width = '0%';
 
+  // Vista de prueba: ?bootError=1 lleva la barra a la mitad y muestra el fallo.
+  if (new URLSearchParams(window.location.search).get('bootError') === '1') {
+    progress.style.transition = 'width 1000ms linear';
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    progress.style.width = '50%';
+    window.setTimeout(showError, 1100);
+    return;
+  }
+
   const tasks = [
     ...imageUrls.map((url) => () => preloadImage(url)),
     ...fileUrls.map((url) => () => preloadFile(url)),
@@ -115,5 +124,9 @@ function showError() {
   requestAnimationFrame(() => errorCard.classList.add('neptune-boot-error--visible'));
 }
 
-retryButton.addEventListener('click', () => window.location.reload());
+retryButton.addEventListener('click', () => {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('bootError');
+  window.location.replace(url.href);
+});
 start();
