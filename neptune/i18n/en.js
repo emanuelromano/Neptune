@@ -1,5 +1,8 @@
 /* English — default language of Neptune. */
 export default Object.freeze({
+  'boot.loading': 'Loading Neptune',
+  'boot.error': 'There was an error obtaining system resources.',
+  'boot.retry': 'Retry',
   'simulator.title': 'Neptune PDA UI Prototype',
   'simulator.controls': 'Simulator controls',
   'simulator.resolutionOrientation': 'Resolution and orientation',

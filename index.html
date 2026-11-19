@@ -6,8 +6,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#292929" />
   <title>Neptune PDA UI Prototype</title>
+  <script>
+    // Pinta el tema y acento guardados antes de cargar los módulos, sin flash inicial.
+    try {
+      const saved = JSON.parse(localStorage.getItem('neptune-preferences') || '{}');
+      document.documentElement.dataset.neptuneBootTheme = saved.theme === 'dark' || (!saved.theme && localStorage.getItem('neptune-theme') === 'dark') ? 'dark' : 'light';
+      if (/^#[\da-f]{6}$/i.test(saved.accentColor)) {
+        document.documentElement.style.setProperty('--neptune-boot-accent', saved.accentColor);
+      }
+    } catch { /* Continúa con blanco y rojo predeterminados. */ }
+  </script>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="neptune/css/neptune.css" />
+  <link rel="stylesheet" href="neptune/css/boot.css" />
 </head>
 
 <body>
@@ -29,13 +40,23 @@
       <div id="canvas-shell">
         <div id="pda-canvas" aria-label="Neptune screen">
           <div id="neptune-app"></div>
+          <div id="neptune-boot" role="status" aria-live="polite" aria-label="Loading Neptune">
+            <div class="neptune-boot-error" role="alert" hidden>
+              <!-- Trazado de assets/icons/error.svg, inline para que sea visible incluso si falla su descarga. -->
+              <svg class="neptune-boot-error-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.71,16.71Q13,16.43 13,16t-0.29-0.71T12,15t-0.71,0.29T11,16t0.29,0.71T12,17t0.71-0.29ZM11,13h2V7H11v6Zm1,9q-2.07,0-3.9-0.79q-1.82-0.79-3.17-2.14Q3.58,17.73 2.79,15.9T2,12Q2,9.92 2.79,8.1Q3.58,6.27 4.93,4.93Q6.28,3.57 8.1,2.79Q9.93,2 12,2t3.9,0.79t3.17,2.14q1.35,1.35 2.14,3.17Q22,9.92 22,12t-0.79,3.9t-2.14,3.17q-1.35,1.35-3.17,2.14T12,22Zm0-2q3.35,0 5.68-2.32T20,12T17.68,6.32T12,4T6.33,6.32T4,12t2.33,5.68T12,20Zm0-8Z"/></svg>
+              <p class="neptune-boot-error-message"></p>
+              <button class="neptune-boot-retry" type="button"></button>
+            </div>
+            <div class="neptune-boot-progress" aria-hidden="true">
+              <div class="neptune-boot-progress-fill"></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
     <p id="status-message" role="status" aria-live="polite"></p>
   </main>
-  <script type="module" src="js/script.js"></script>
-  <script type="module" src="neptune/js/app.js"></script>
+  <script type="module" src="neptune/js/bootstrap.js"></script>
 </body>
 
 </html>

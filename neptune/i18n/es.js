@@ -1,5 +1,8 @@
 /* Español. Mantiene las mismas claves que en.js para una traducción completa. */
 export default Object.freeze({
+  'boot.loading': 'Cargando Neptune',
+  'boot.error': 'Hubo un error al obtener elementos del sistema.',
+  'boot.retry': 'Reintentar',
   'simulator.title': 'Prototipo de UI PDA Neptune',
   'simulator.controls': 'Controles del simulador',
   'simulator.resolutionOrientation': 'Resolución y orientación',
