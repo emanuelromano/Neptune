@@ -3,6 +3,11 @@
  * Los estilos del simulador permanecen en styles.css.
  */
 
+:root {
+  /* Gris compartido por las tarjetas oscuras y la pantalla de carga. */
+  --neptune-dark-card-color: #303030;
+}
+
 #pda-canvas {
   overflow: hidden;
 }
@@ -88,7 +93,7 @@
 #neptune-app[data-theme='dark'] {
   --neptune-text-color: #ffffff;
   --neptune-screen-color: #161616;
-  --neptune-glass-color: #303030;
+  --neptune-glass-color: var(--neptune-dark-card-color);
   --neptune-app-back-button-color: #3c3c3c;
   --neptune-app-back-button-active-color: #525252;
   --neptune-settings-row-color: #3a3a3a;
