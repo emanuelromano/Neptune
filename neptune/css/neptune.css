@@ -36,6 +36,8 @@
   --neptune-app-back-button-shadow: 0 2px 6px rgb(0 0 0 / 18%);
   /* Radio independiente del botón de volver. */
   --neptune-app-back-button-radius: 7px;
+  /* Configuración empieza 10 px debajo del borde inferior del botón Atrás. */
+  --neptune-settings-panel-top: calc(var(--neptune-app-back-button-offset) + var(--neptune-app-back-button-size) + 10px);
 
   /* TOKENS DE TEMA CLARO: colores compartidos por texto, iconos y superficies. */
   --neptune-text-color: #000000;
@@ -523,13 +525,81 @@
 /* Panel de Configuración, visible únicamente cuando se expande esa aplicación. */
 .neptune-settings-panel {
   position: absolute;
-  top: 90px;
-  right: 20px;
-  left: 20px;
+  top: var(--neptune-settings-panel-top);
+  /* 416 px dentro de la tarjeta abierta de 440 px. */
+  right: 12px;
+  /* Llega al borde inferior de la tarjeta expandida. */
+  bottom: 0;
+  left: 12px;
+  /* Conserva 20 px bajo Información para que su sombra no quede recortada. */
+  padding-bottom: 20px;
+  /* El contenido adicional se desplaza dentro de Configuración. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* La barra propia ocupa el espacio exterior; la nativa no reduce las tarjetas. */
+  scrollbar-width: none;
+  /* El gesto de dedo y el arrastre del mouse se gestionan en settings/app.js. */
+  touch-action: none;
+  cursor: grab;
   opacity: 0;
   z-index: 1;
   pointer-events: none;
   transition: opacity 180ms ease;
+}
+
+.neptune-settings-panel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Las tarjetas mantienen sus 400 px; los 8 px laterales dejan ver la sombra. */
+.neptune-settings-scroll-content {
+  display: flow-root;
+}
+
+.neptune-settings-scroll-content > * {
+  margin-inline: 8px;
+}
+
+.neptune-settings-panel--dragging .neptune-settings-scroll-content {
+  will-change: transform;
+}
+
+.neptune-settings-scroll-content--settling {
+  transition: transform var(--neptune-bounce-duration) var(--neptune-bounce-easing);
+}
+
+/* Barra de 6 px centrada en los 20 px libres a la derecha de las tarjetas. */
+.neptune-settings-scrollbar {
+  position: absolute;
+  top: var(--neptune-settings-panel-top);
+  right: 7px;
+  bottom: 20px;
+  width: 6px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.neptune-app-expansion-card--expanded .neptune-settings-scrollbar {
+  opacity: 1;
+  transition-delay: 120ms;
+}
+
+.neptune-settings-scrollbar[hidden] {
+  display: none;
+}
+
+.neptune-settings-scrollbar-thumb {
+  width: 100%;
+  border-radius: 3px;
+  background: var(--neptune-settings-accent-selection-color);
+}
+
+.neptune-settings-panel--dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .neptune-app-expansion-card--expanded .neptune-settings-panel {
@@ -561,6 +631,8 @@
 .neptune-settings-accent-row {
   display: flex;
   flex-direction: column;
+  /* Separa la primera tarjeta del borde del panel para mostrar su sombra. */
+  margin-top: 6px;
   /* Alinea el título al padding superior estándar de las demás tarjetas. */
   justify-content: flex-start;
   /* La altura nace del contenido: 12 px de padding también bajo la paleta. */
@@ -795,6 +867,14 @@
 }
 
 /* Switch accesible: el input real conserva foco y el track imita a iOS. */
+.neptune-settings-theme-hit-area {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 32px;
+  cursor: pointer;
+}
+
 .neptune-settings-theme-input {
   position: absolute;
   width: 1px;
@@ -804,6 +884,7 @@
 
 .neptune-settings-theme-switch {
   position: relative;
+  display: block;
   flex: 0 0 auto;
   width: 52px;
   height: 32px;
@@ -857,7 +938,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .neptune-list-content--settling {
+  .neptune-list-content--settling,
+  .neptune-settings-scroll-content--settling {
     transition: none;
   }
 

@@ -35,9 +35,15 @@ export function mount(container) {
   const watchfaceRow = createWatchfaceRow();
   const fontScaleRow = createFontScaleRow();
   const languageRow = createLanguageRow();
-  const rows = [accentRow, themeRow, wallpaperRow, watchfaceRow, fontScaleRow, languageRow];
-  panel.append(...rows.map(({ row }) => row));
+  const aboutRow = createAboutRow();
+  const rows = [accentRow, themeRow, wallpaperRow, watchfaceRow, fontScaleRow, languageRow, aboutRow];
+  const scrollContent = document.createElement('div');
+  scrollContent.className = 'neptune-settings-scroll-content';
+  scrollContent.append(...rows.map(({ row }) => row));
+  panel.append(scrollContent);
   container.append(panel);
+  const disableDragScroll = enableSettingsDragScroll(panel, scrollContent);
+  const disableScrollbar = createSettingsScrollbar(panel, container);
 
   updateSettingsCopy(panel, rows);
   syncControls(getPreferences(), accentRow.buttons, themeRow.input, wallpaperRow.buttons, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
@@ -47,11 +53,247 @@ export function mount(container) {
   });
 
   return () => {
+    disableScrollbar();
+    disableDragScroll();
     unsubscribe();
     watchfaceRow.dropdown.destroy();
     fontScaleRow.dropdown.destroy();
     languageRow.dropdown.destroy();
     panel.remove();
+  };
+}
+
+// Indicador de scroll propio: permite ubicar la barra en el margen
+// derecho, sin que el ancho de las tarjetas dependa de la barra nativa.
+function createSettingsScrollbar(panel, container) {
+  const track = document.createElement('div');
+  track.className = 'neptune-settings-scrollbar';
+  track.setAttribute('aria-hidden', 'true');
+  const thumb = document.createElement('div');
+  thumb.className = 'neptune-settings-scrollbar-thumb';
+  track.append(thumb);
+  container.append(track);
+
+  function update() {
+    const maxScroll = panel.scrollHeight - panel.clientHeight;
+    track.hidden = maxScroll <= 0;
+    if (track.hidden) return;
+    const trackHeight = track.clientHeight;
+    const thumbHeight = Math.max(24, trackHeight * panel.clientHeight / panel.scrollHeight);
+    const travel = Math.max(0, trackHeight - thumbHeight);
+    thumb.style.height = `${thumbHeight}px`;
+    thumb.style.transform = `translateY(${travel * panel.scrollTop / maxScroll}px)`;
+  }
+
+  const resizeObserver = new ResizeObserver(update);
+  resizeObserver.observe(panel);
+  resizeObserver.observe(track);
+  resizeObserver.observe(panel.firstElementChild);
+  panel.addEventListener('scroll', update, { passive: true });
+  const firstFrame = requestAnimationFrame(update);
+  return () => {
+    cancelAnimationFrame(firstFrame);
+    resizeObserver.disconnect();
+    panel.removeEventListener('scroll', update);
+    track.remove();
+  };
+}
+
+// Física de Configuración: usa los mismos valores de inercia y rebote que Home
+// (item-list.js). Ajusta estas constantes para modificar ambos por separado.
+function enableSettingsDragScroll(panel, content) {
+  const DRAG_THRESHOLD = 3;
+  const MAX_OVERSCROLL = 60;
+  const OVERSCROLL_RESISTANCE = 1.5;
+  const OVERSCROLL_CLEANUP_DELAY = 650;
+  const MOMENTUM_DECELERATION_RATE = 0.0015;
+  const MOMENTUM_BOOST = 1.15;
+  const MIN_MOMENTUM_VELOCITY = 0.002;
+  const VELOCITY_HISTORY_WEIGHT = 0.6;
+  const VELOCITY_RECENT_WEIGHT = 0.4;
+  const MAX_FRAME_TIME = 32;
+
+  let pointerId = null;
+  let startY = 0;
+  let startScrollTop = 0;
+  let lastY = 0;
+  let lastTime = 0;
+  let velocity = 0;
+  let dragging = false;
+  let elasticOffset = 0;
+  let maxScrollTop = 0;
+  let momentumFrame = null;
+  let settleFrame = null;
+  let settleTimer = null;
+  let suppressClick = false;
+
+  function refreshMaxScrollTop() {
+    maxScrollTop = Math.max(0, panel.scrollHeight - panel.clientHeight);
+  }
+
+  function setElasticOffset(offset) {
+    elasticOffset = offset;
+    content.style.transform = `translateY(${offset}px)`;
+  }
+
+  function scrollToPosition(position) {
+    if (position < 0) {
+      panel.scrollTop = 0;
+      setElasticOffset(Math.min(MAX_OVERSCROLL, -position * OVERSCROLL_RESISTANCE));
+    } else if (position > maxScrollTop) {
+      panel.scrollTop = maxScrollTop;
+      setElasticOffset(-Math.min(MAX_OVERSCROLL, (position - maxScrollTop) * OVERSCROLL_RESISTANCE));
+    } else {
+      panel.scrollTop = position;
+      setElasticOffset(0);
+    }
+  }
+
+  function clearSettle() {
+    clearTimeout(settleTimer);
+    if (settleFrame !== null) cancelAnimationFrame(settleFrame);
+    settleFrame = null;
+    content.classList.remove('neptune-settings-scroll-content--settling');
+  }
+
+  function settleOverscroll(defer = false) {
+    clearSettle();
+    const start = () => {
+      content.classList.add('neptune-settings-scroll-content--settling');
+      setElasticOffset(0);
+      settleTimer = setTimeout(() => {
+        content.classList.remove('neptune-settings-scroll-content--settling');
+        content.style.transform = '';
+      }, OVERSCROLL_CLEANUP_DELAY);
+    };
+    if (defer) {
+      settleFrame = requestAnimationFrame(() => {
+        settleFrame = requestAnimationFrame(() => {
+          settleFrame = null;
+          start();
+        });
+      });
+    } else {
+      start();
+    }
+  }
+
+  function stopMomentum() {
+    if (momentumFrame !== null) cancelAnimationFrame(momentumFrame);
+    momentumFrame = null;
+  }
+
+  function startMomentum() {
+    velocity *= MOMENTUM_BOOST;
+    let previousTime = performance.now();
+    const animate = (time) => {
+      const elapsed = Math.min(time - previousTime, MAX_FRAME_TIME);
+      previousTime = time;
+      const nextPosition = panel.scrollTop + velocity * elapsed;
+      if (nextPosition < 0 || nextPosition > maxScrollTop) {
+        scrollToPosition(nextPosition);
+        momentumFrame = null;
+        settleOverscroll(true);
+        return;
+      }
+      scrollToPosition(nextPosition);
+      velocity *= Math.exp(-MOMENTUM_DECELERATION_RATE * elapsed);
+      if (Math.abs(velocity) < MIN_MOMENTUM_VELOCITY) {
+        momentumFrame = null;
+        settleOverscroll();
+        return;
+      }
+      momentumFrame = requestAnimationFrame(animate);
+    };
+    momentumFrame = requestAnimationFrame(animate);
+  }
+
+  function onPointerDown(event) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // Cada menú desplegable conserva su propio scroll.
+    if (event.target.closest('.neptune-settings-dropdown-options')) return;
+    if (pointerId !== null) return;
+    stopMomentum();
+    clearSettle();
+    pointerId = event.pointerId;
+    startY = lastY = event.clientY;
+    startScrollTop = panel.scrollTop;
+    lastTime = event.timeStamp;
+    velocity = 0;
+    dragging = false;
+    refreshMaxScrollTop();
+  }
+
+  function onPointerMove(event) {
+    if (event.pointerId !== pointerId) return;
+    const distance = startY - event.clientY;
+    if (!dragging && Math.abs(distance) < DRAG_THRESHOLD) return;
+    if (!dragging) {
+      dragging = true;
+      panel.setPointerCapture(event.pointerId);
+      panel.classList.add('neptune-settings-panel--dragging');
+    }
+    const elapsed = Math.max(1, event.timeStamp - lastTime);
+    const measuredVelocity = (lastY - event.clientY) / elapsed;
+    velocity = velocity * VELOCITY_HISTORY_WEIGHT + measuredVelocity * VELOCITY_RECENT_WEIGHT;
+    lastY = event.clientY;
+    lastTime = event.timeStamp;
+    scrollToPosition(startScrollTop + distance);
+    event.preventDefault();
+  }
+
+  function onPointerEnd(event) {
+    if (event.pointerId !== pointerId) return;
+    if (panel.hasPointerCapture(pointerId)) panel.releasePointerCapture(pointerId);
+    pointerId = null;
+    panel.classList.remove('neptune-settings-panel--dragging');
+    if (!dragging) return;
+    suppressClick = true;
+    // Un drag nunca debe activar por accidente un switch, color o desplegable.
+    setTimeout(() => { suppressClick = false; }, 0);
+    if (Math.abs(elasticOffset) > 0 || event.type === 'pointercancel') {
+      settleOverscroll(true);
+    } else if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches &&
+               event.timeStamp - lastTime <= 80 && Math.abs(velocity) >= MIN_MOMENTUM_VELOCITY) {
+      startMomentum();
+    } else {
+      settleOverscroll(true);
+    }
+  }
+
+  function onClick(event) {
+    if (!suppressClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClick = false;
+  }
+
+  function onWheel(event) {
+    if (event.target.closest('.neptune-settings-dropdown-options')) return;
+    event.preventDefault();
+    stopMomentum();
+    clearSettle();
+    refreshMaxScrollTop();
+    scrollToPosition(panel.scrollTop + event.deltaY);
+    settleOverscroll();
+  }
+
+  panel.addEventListener('pointerdown', onPointerDown);
+  panel.addEventListener('pointermove', onPointerMove);
+  panel.addEventListener('pointerup', onPointerEnd);
+  panel.addEventListener('pointercancel', onPointerEnd);
+  panel.addEventListener('click', onClick, true);
+  panel.addEventListener('wheel', onWheel, { passive: false });
+  return () => {
+    stopMomentum();
+    clearSettle();
+    if (pointerId !== null && panel.hasPointerCapture(pointerId)) panel.releasePointerCapture(pointerId);
+    panel.removeEventListener('pointerdown', onPointerDown);
+    panel.removeEventListener('pointermove', onPointerMove);
+    panel.removeEventListener('pointerup', onPointerEnd);
+    panel.removeEventListener('pointercancel', onPointerEnd);
+    panel.removeEventListener('click', onClick, true);
+    panel.removeEventListener('wheel', onWheel);
   };
 }
 
@@ -105,7 +347,7 @@ function createAccentRow() {
 }
 
 function createThemeRow() {
-  const row = document.createElement('label');
+  const row = document.createElement('section');
   row.className = 'neptune-settings-theme-row';
   const label = document.createElement('span');
   label.className = 'neptune-settings-theme-label';
@@ -117,10 +359,14 @@ function createThemeRow() {
   const track = document.createElement('span');
   track.className = 'neptune-settings-theme-switch';
   track.setAttribute('aria-hidden', 'true');
+  // Solo esta etiqueta pequeña activa el checkbox; el resto de la tarjeta no.
+  const switchHitArea = document.createElement('label');
+  switchHitArea.className = 'neptune-settings-theme-hit-area';
+  switchHitArea.append(input, track);
   input.addEventListener('change', () => {
     updatePreferences({ theme: input.checked ? 'dark' : 'light' });
   });
-  row.append(label, input, track);
+  row.append(label, switchHitArea);
   return {
     row,
     input,
@@ -260,6 +506,22 @@ function createLanguageRow() {
   };
 }
 
+function createAboutRow() {
+  const row = document.createElement('section');
+  row.className = 'neptune-settings-watchface-row neptune-settings-about-row';
+  const label = document.createElement('span');
+  label.className = 'neptune-settings-theme-label';
+  row.append(label);
+
+  return {
+    row,
+    updateLanguage() {
+      label.textContent = t('settings.about');
+      row.setAttribute('aria-label', t('settings.about'));
+    }
+  };
+}
+
 /*
  * DESPLEGABLE PERSONALIZADO
  * Sustituye al <select> nativo para que el ítem seleccionado use el color de
@@ -311,13 +573,15 @@ function createSettingsDropdown({ ariaLabelKey, options, onChange }) {
   function positionMenu() {
     const card = element.closest('.neptune-app-expansion-card');
     const screen = element.closest('.neptune-screen');
+    const panel = element.closest('.neptune-settings-panel');
     const triggerRect = trigger.getBoundingClientRect();
     const cardRect = card?.getBoundingClientRect();
     const screenRect = screen?.getBoundingClientRect();
+    const panelRect = panel?.getBoundingClientRect();
     const scale = triggerRect.height / trigger.offsetHeight || 1;
     const gap = 6 * scale;
-    const upperEdge = Math.max(0, cardRect?.top ?? 0, screenRect?.top ?? 0);
-    const lowerEdge = Math.min(window.innerHeight, cardRect?.bottom ?? window.innerHeight, screenRect?.bottom ?? window.innerHeight);
+    const upperEdge = Math.max(0, cardRect?.top ?? 0, screenRect?.top ?? 0, panelRect?.top ?? 0);
+    const lowerEdge = Math.min(window.innerHeight, cardRect?.bottom ?? window.innerHeight, screenRect?.bottom ?? window.innerHeight, panelRect?.bottom ?? window.innerHeight);
 
     // Mide el menú completo antes de limitarlo por el espacio disponible.
     menu.style.maxHeight = '';

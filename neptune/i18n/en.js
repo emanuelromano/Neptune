@@ -49,6 +49,7 @@ export default Object.freeze({
   'settings.textSize': 'Text size',
   'settings.selectTextSize': 'Choose text size',
   'settings.language': 'Language',
+  'settings.about': 'About',
   'settings.selectLanguage': 'Choose language',
   'color.red': 'Red',
   'color.orange': 'Orange',

@@ -149,7 +149,7 @@ select {
 html:fullscreen,
 html:fullscreen body,
 html:fullscreen #app {
-  background: #ffffff;
+  background: #000000;
 }
 
 html:fullscreen #controls,
@@ -158,7 +158,7 @@ html:fullscreen #status-message {
 }
 
 html:fullscreen #workspace {
-  background: #ffffff;
+  background: #000000;
 }
 
 @media (max-width: 760px) {
