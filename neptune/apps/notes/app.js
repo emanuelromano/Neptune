@@ -1,4 +1,9 @@
-/* Aplicación Notas: punto de montaje preparado para su futura vista. */
-export function mount() {
-  return () => {};
+/* Aplicación Notas: sus futuros controles se montarán dentro del panel. */
+import { mountAppPanel } from '../../js/components/app-panel.js';
+
+export function mount(container) {
+  return mountAppPanel(container, {
+    className: 'neptune-notes-panel',
+    titleKey: 'app.notes'
+  });
 }

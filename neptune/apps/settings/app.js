@@ -26,7 +26,7 @@ const ACCENT_COLORS = [
 
 export function mount(container) {
   const panel = document.createElement('section');
-  panel.className = 'neptune-settings-panel';
+  panel.className = 'neptune-app-panel neptune-settings-panel';
   panel.setAttribute('aria-label', t('settings.panelLabel'));
 
   const accentRow = createAccentRow();
@@ -42,8 +42,8 @@ export function mount(container) {
   scrollContent.append(...rows.map(({ row }) => row));
   panel.append(scrollContent);
   container.append(panel);
-  const disableDragScroll = enableSettingsDragScroll(panel, scrollContent);
-  const disableScrollbar = createSettingsScrollbar(panel, container);
+  const scrollbar = createSettingsScrollbar(panel, container);
+  const disableDragScroll = enableSettingsDragScroll(panel, scrollContent, scrollbar.show);
 
   updateSettingsCopy(panel, rows);
   syncControls(getPreferences(), accentRow.buttons, themeRow.input, wallpaperRow.buttons, watchfaceRow.dropdown, fontScaleRow.dropdown, languageRow.dropdown);
@@ -53,8 +53,8 @@ export function mount(container) {
   });
 
   return () => {
-    disableScrollbar();
     disableDragScroll();
+    scrollbar.destroy();
     unsubscribe();
     watchfaceRow.dropdown.destroy();
     fontScaleRow.dropdown.destroy();
@@ -66,6 +66,8 @@ export function mount(container) {
 // Indicador de scroll propio: permite ubicar la barra en el margen
 // derecho, sin que el ancho de las tarjetas dependa de la barra nativa.
 function createSettingsScrollbar(panel, container) {
+  // Tiempo de inactividad antes de ocultar el indicador (milisegundos).
+  const SCROLLBAR_IDLE_DELAY = 5000;
   const track = document.createElement('div');
   track.className = 'neptune-settings-scrollbar';
   track.setAttribute('aria-hidden', 'true');
@@ -73,6 +75,7 @@ function createSettingsScrollbar(panel, container) {
   thumb.className = 'neptune-settings-scrollbar-thumb';
   track.append(thumb);
   container.append(track);
+  let hideTimer = null;
 
   function update() {
     const maxScroll = panel.scrollHeight - panel.clientHeight;
@@ -85,23 +88,41 @@ function createSettingsScrollbar(panel, container) {
     thumb.style.transform = `translateY(${travel * panel.scrollTop / maxScroll}px)`;
   }
 
+  function show() {
+    track.classList.remove('neptune-settings-scrollbar--idle');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      track.classList.add('neptune-settings-scrollbar--idle');
+    }, SCROLLBAR_IDLE_DELAY);
+  }
+
+  function onScroll() {
+    update();
+    show();
+  }
+
   const resizeObserver = new ResizeObserver(update);
   resizeObserver.observe(panel);
   resizeObserver.observe(track);
   resizeObserver.observe(panel.firstElementChild);
-  panel.addEventListener('scroll', update, { passive: true });
+  panel.addEventListener('scroll', onScroll, { passive: true });
   const firstFrame = requestAnimationFrame(update);
-  return () => {
-    cancelAnimationFrame(firstFrame);
-    resizeObserver.disconnect();
-    panel.removeEventListener('scroll', update);
-    track.remove();
+  show();
+  return {
+    show,
+    destroy() {
+      clearTimeout(hideTimer);
+      cancelAnimationFrame(firstFrame);
+      resizeObserver.disconnect();
+      panel.removeEventListener('scroll', onScroll);
+      track.remove();
+    }
   };
 }
 
 // Física de Configuración: usa los mismos valores de inercia y rebote que Home
 // (item-list.js). Ajusta estas constantes para modificar ambos por separado.
-function enableSettingsDragScroll(panel, content) {
+function enableSettingsDragScroll(panel, content, onScrollActivity) {
   const DRAG_THRESHOLD = 3;
   const MAX_OVERSCROLL = 60;
   const OVERSCROLL_RESISTANCE = 1.5;
@@ -137,6 +158,7 @@ function enableSettingsDragScroll(panel, content) {
   }
 
   function scrollToPosition(position) {
+    onScrollActivity();
     if (position < 0) {
       panel.scrollTop = 0;
       setElasticOffset(Math.min(MAX_OVERSCROLL, -position * OVERSCROLL_RESISTANCE));

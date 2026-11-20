@@ -522,18 +522,28 @@
   }
 }
 
-/* Panel de Configuración, visible únicamente cuando se expande esa aplicación. */
-.neptune-settings-panel {
+/* Área compartida por las apps abiertas; cada app añade su clase específica. */
+.neptune-app-panel {
   position: absolute;
   top: var(--neptune-settings-panel-top);
-  /* 416 px dentro de la tarjeta abierta de 440 px. */
-  right: 12px;
-  /* Llega al borde inferior de la tarjeta expandida. */
+  right: 0;
   bottom: 0;
-  left: 12px;
-  /* Conserva 20 px bajo Información para que su sombra no quede recortada. */
+  left: 0;
   padding-bottom: 20px;
-  /* El contenido adicional se desplaza dentro de Configuración. */
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.neptune-app-expansion-card--expanded .neptune-app-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 120ms;
+}
+
+/* Configuración añade scroll y física a su panel compartido. */
+.neptune-settings-panel {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -542,23 +552,19 @@
   /* El gesto de dedo y el arrastre del mouse se gestionan en settings/app.js. */
   touch-action: none;
   cursor: grab;
-  opacity: 0;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 180ms ease;
 }
 
 .neptune-settings-panel::-webkit-scrollbar {
   display: none;
 }
 
-/* Las tarjetas mantienen sus 400 px; los 8 px laterales dejan ver la sombra. */
+/* Las tarjetas conservan su ancho anterior y dejan 20 px libres a cada lado. */
 .neptune-settings-scroll-content {
   display: flow-root;
 }
 
 .neptune-settings-scroll-content > * {
-  margin-inline: 8px;
+  margin-inline: 20px;
 }
 
 .neptune-settings-panel--dragging .neptune-settings-scroll-content {
@@ -587,6 +593,12 @@
   transition-delay: 120ms;
 }
 
+/* Tras 5 s sin scroll se desvanece; el próximo gesto recupera el indicador. */
+.neptune-app-expansion-card--expanded .neptune-settings-scrollbar--idle {
+  opacity: 0;
+  transition-delay: 0s;
+}
+
 .neptune-settings-scrollbar[hidden] {
   display: none;
 }
@@ -600,12 +612,6 @@
 .neptune-settings-panel--dragging {
   cursor: grabbing;
   user-select: none;
-}
-
-.neptune-app-expansion-card--expanded .neptune-settings-panel {
-  opacity: 1;
-  pointer-events: auto;
-  transition-delay: 120ms;
 }
 
 .neptune-settings-theme-row {
@@ -951,7 +957,7 @@
   .neptune-item-icon,
   .neptune-clock-hand-hub,
   .neptune-settings-dropdown-chevron,
-  .neptune-settings-panel,
+  .neptune-app-panel,
   .neptune-settings-theme-switch,
   .neptune-settings-theme-switch::after,
   #neptune-app,
